@@ -29,8 +29,9 @@ void disassembleCHIP8opcodes(uint8_t *buffer, int pc) {
             }
             break;
 
-        //code[0] & 0xf is code[0] AND 15, the result of which is the value of the lower 4 bits
-        //i.e. 0xf is the bitmask to mask out a nibble 
+        //code[0] & 0xf is bitmasking
+        //0xf = 0b1111 i.e. 0xf is the bitmask to mask out 4 bits i.e. a nibble
+        //The end result is the value of the lower 4 bits
         case 0x1: printf("%-10s $%01x%02x", "JUMP", code[0] & 0xf, code[1]); break;              //1NNN: Jump to address NNN
         case 0x2: printf("%-10s $%01x%02x", "CALL", code[0] & 0xf, code[1]); break;              //2NNN: Execute subroutine starting at address NNN
         case 0x3: printf("%-10s V%01X,#$%02x", "SKIP_EQ", code[0] & 0xf, code[1]); break;        //3XNN: Skip following instruction if value of VX equals NN
@@ -169,7 +170,7 @@ void op2NNN(CHIP8State *state, uint8_t *code) {
 }
 
 void op3XNN(CHIP8State *state, uint8_t *code) {
-    //SKIP_EQ
+    //SKIP_EQ NNN
     uint8_t reg = code[0] & 0xf;
     
     if (state -> V[reg] == code[1]) {
@@ -190,21 +191,160 @@ void op4XNN(CHIP8State *state, uint8_t *code) {
     state -> pc += 2;
 }
 
+void op5XY0(CHIP8State *state, uint8_t *code) {
+    //SKIP_EQ VY
+    uint8_t regX = code[0] & 0xf;
+    uint8_t regY = (code[1] & 0xf) >> 4;
+
+    if (state -> V[regX] == state -> V[regY]) {
+        state -> pc +=2;
+    }
+
+    state -> pc += 2;
+}
+
+void op6XNN(CHIP8State *state, uint8_t *code) {
+    //MVI
+    uint8_t reg = code[0] & 0xf;
+    state -> V[reg] = code[1];
+    state -> pc += 2;
+}
+
+void op7XNN(CHIP8State *state, uint8_t *code) {
+    //ADI
+    uint8_t reg = code[0] & 0xf;
+    state -> V[reg] += code[1];
+    state -> pc += 2;
+}
+
+void op8XY0(CHIP8State *state, uint8_t *code) {
+    //MOV
+    uint8_t regX = code[0] & 0xf;
+    uint8_t regY = (code[1] & 0xf) >> 4;
+    state -> V[regX] = state -> V[regY];
+    state -> pc += 2;
+}
+
+void op8XY1(CHIP8State *state, uint8_t *code) {
+    //OR
+    uint8_t regX = code[0] & 0xf;
+    uint8_t regY = (code[1] & 0xf) >> 4;
+    state -> V[regX] |= state -> V[regY];
+    state -> pc += 2;
+}
+
+void op8XY2(CHIP8State *state, uint8_t *code) {
+    //AND
+    uint8_t regX = code[0] & 0xf;
+    uint8_t regY = (code[1] & 0xf) >> 4;
+    state -> V[regX] &= state -> V[regY];
+    state -> pc += 2;
+}
+
+void op8XY3(CHIP8State *state, uint8_t *code) {
+    //XOR
+    uint8_t regX = code[0] & 0xf;
+    uint8_t regY = (code[1] & 0xf) >> 4;
+    state -> V[regX] ^= state -> V[regY];
+    state -> pc += 2;
+}
+
+void op8XY4(CHIP8State *state, uint8_t *code) {
+    //ADD and set VF
+    uint8_t regX = code[0] & 0xf;
+    uint8_t regY = (code[1] & 0xf) >> 4;
+    uint16_t result = (state -> V[regX]) + (state -> V[regY]);
+
+    //Registers are 8-bit, not 16-bit so we need to bitmask with 0xff = 0b11111111
+    state -> V[regX] = result & 0xff;
+    
+    //Has carry occured? Bitmask here is 0xff00 = 0b111111100000000
+    uint8_t carry = result & 0xff00;
+    state -> V[0xF] = carry;
+
+    state -> pc += 2;
+}
+
+void op8XY5(CHIP8State *state, uint8_t *code) {
+    //SUB and set VF
+    uint8_t regX = code[0] & 0xf;
+    uint8_t regY = (code[1] & 0xf) >> 4;
+    state -> V[regX] -= state -> V[regY];
+
+    //Has borrow occured?
+    uint8_t borrow = (state -> V[regX]) > (state -> V[regY]);
+    state -> V[0xF] = borrow;
+
+    state -> pc += 2;
+}
+
+void op8XY6(CHIP8State *state, uint8_t *code) {
+    //SHR and set VF to least significant bit
+    uint8_t regX = code[0] & 0xf;
+    uint8_t regY = (code[1] & 0xf) >> 4;
+    state -> V[regX] = (state -> V[regX]) >> 1;
+
+    uint8_t lsb = (state -> V[regX]) & 0x1;
+    state -> V[0xF] = lsb;
+}
+
+void op8XY7(CHIP8State *state, uint8_t *code) {
+    //SUBB and set VF
+    uint8_t regX = code[0] & 0xf;
+    uint8_t regY = (code[1] & 0xf) >> 4;
+    state -> V[regX] = (state -> V[regY]) - (state -> V[regX]);
+
+    //Has borrow occured?
+    uint8_t borrow = (state -> V[regY]) > (state -> V[regX]);
+    state -> V[0xF] = borrow;
+}
+
+void op8XYE(CHIP8State *state, uint8_t *code) {
+    //SHL and set VF to most significant bit
+    uint8_t regX = code[0] & 0xf;
+    uint8_t regY = (code[1] & 0xf) >> 4;
+    state -> V[regX] = (state -> V[regX]) << 1;
+
+    //0x80 = 0b10000000
+    uint8_t msb = (0x80 == ((state -> V[regX]) & 0x80));
+    state -> V[0xF] = msb;
+}
+
 void emulateCHIP8opcodes(CHIP8State *state) {
     uint8_t *opcode = &state -> memory[state -> pc];
 
-    int nibble = (*opcode & 0xf0) >> 4;
-    switch (nibble) {
-        case 0x00: unimplementedInstruction(state); break;
-        case 0x01: unimplementedInstruction(state); break;
-        case 0x02: unimplementedInstruction(state); break;
-        case 0x03: unimplementedInstruction(state); break;
-        case 0x04: unimplementedInstruction(state); break;
-        case 0x05: unimplementedInstruction(state); break;
-        case 0x06: unimplementedInstruction(state); break;
-        case 0x07: unimplementedInstruction(state); break;
-        case 0x08: unimplementedInstruction(state); break;
+    int firstNibble = (*opcode & 0xf0) >> 4;
+    switch (firstNibble) {
+        case 0x00: 
+            switch (opcode[1]) {
+                case 0xe0: op00E0(state, opcode); break;
+                case 0xee: op00EE(state, opcode); break;
+                default: unimplementedInstruction(state); break;
+            }
+            break;
+        case 0x01: op1NNN(state, opcode); break;
+        case 0x02: op2NNN(state, opcode); break;
+        case 0x03: op3XNN(state, opcode); break;
+        case 0x04: op4XNN(state, opcode); break;
+        case 0x05: op5XY0(state, opcode); break;
+        case 0x06: op6XNN(state, opcode); break;
+        case 0x07: op7XNN(state, opcode); break;
+        case 0x08:
+            int secondNibble = opcode[1] & 0xf;
+            switch (secondNibble) {
+                case 0: op8XY0(state, opcode); break;
+                case 1: op8XY1(state, opcode); break;
+                case 2: op8XY2(state, opcode); break;
+                case 3: op8XY3(state, opcode); break;
+                case 4: op8XY4(state, opcode); break;
+                case 5: op8XY5(state, opcode); break;
+                case 6: op8XY6(state, opcode); break;
+                case 7: op8XY7(state, opcode); break;
+                case 0xe: op8XYE(state, opcode); break;
+                default: unimplementedInstruction(state); break;
+            }
         case 0x09: unimplementedInstruction(state); break;
+        
         case 0x0a: unimplementedInstruction(state); break;
         case 0x0b: unimplementedInstruction(state); break;
         case 0x0c: unimplementedInstruction(state); break;
