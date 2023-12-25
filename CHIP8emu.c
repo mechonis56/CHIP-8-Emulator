@@ -3,14 +3,20 @@
 #include <stdlib.h>
 #include <string.h>
 #include "CHIP8emu.h"
+#include "font4x5.h"
+
+#define FONT_BASE 0
+#define FONT_SIZE 5*16
 
 CHIP8State* initCHIP8(void) {
-    CHIP8State *s = calloc(sizeof(CHIP8State), 1);  //calloc initialises every byte to 0; second argument is block size in bytes
+    CHIP8State *s = calloc(sizeof(CHIP8State), 1);          //calloc initialises every byte to 0; second argument is block size in bytes
     
     s -> pc = 0x200;
     s -> sp = 0xfa0;
-    s -> memory = calloc(4 * 1024, 1);              //4KB = 4 * 1024 = 4096 bytes
-    s -> screen = &s -> memory[0xf00];              //Display buffer at 0xF00
+    s -> memory = calloc(4 * 1024, 1);                      //4KB = 4 * 1024 = 4096 bytes
+    s -> screen = &s -> memory[0xf00];                      //Display buffer at 0xF00
+
+    memcpy(&(s -> memory[FONT_BASE]), font4x5, FONT_SIZE);   //Put font in first 512 bytes of memory
 
     return s;
 }
@@ -145,7 +151,8 @@ void unimplementedInstruction(CHIP8State *state) {
 
 void op00E0(CHIP8State *state, uint8_t *code) {
     //CLS
-    memset(state -> screen, 0, (64 * 32) / 8);   //Copies 0 into display (64x32) bytes; 1 bit per pixel, 8 bits in a byte = 256 bytes
+    //Copies 0 into display (64x32) bytes; 1 bit per pixel, 8 bits in a byte = 256 bytes
+    memset(state -> screen, 0, (64 * 32) / 8);   
 }
 
 void op00EE(CHIP8State *state, uint8_t *code) {
@@ -332,7 +339,8 @@ void opBNNN(CHIP8State *state, uint8_t *code) {
 void opCXNN(CHIP8State *state, uint8_t *code) {
     //RNDMSK
     uint8_t reg = code[0] & 0xf;
-    state -> V[reg] = random() & code[1];   //random() is from the stdlib
+    //random() is from the stdlib
+    state -> V[reg] = random() & code[1];   
 }
 
 void opDXYN(CHIP8State *state, uint8_t *code) {
@@ -360,10 +368,12 @@ void opDXYN(CHIP8State *state, uint8_t *code) {
             if (srcBit) {
                 uint8_t *destBytePointer = &(state -> screen[(i + y) * (64 / 8) + byteInRow]);
                 uint8_t destByte = *destBytePointer;
-                uint8_t destMask = (0x80 >> bitInByte); //0x80 = 0b10000000
+                //0x80 = 0b10000000
+                uint8_t destMask = (0x80 >> bitInByte); 
                 uint8_t destBit = destByte && destMask;
 
-                srcBit = srcBit << (7 - bitInByte); //srcBit is now either 0 or 1
+                //srcBit is now either 0 or 1
+                srcBit = srcBit << (7 - bitInByte); 
 
                 //If current pixel = on and pixel at (X,Y) is also on, turn off pixel and set VF to 1
                 //Otherwise, draw if current pixel = on and pixel at (X,Y) is off
@@ -373,11 +383,13 @@ void opDXYN(CHIP8State *state, uint8_t *code) {
                 }
 
                 destBit ^= srcBit;
-                destByte = (destByte & ~destMask) | destBit;    //~ flips bits, so this line essentially reverses the mask
+                //~ flips bits, so below line essentially reverses the mask
+                destByte = (destByte & ~destMask) | destBit;    
                 *destBytePointer = destByte;
             }
 
-            spriteBit--;    //For the next significant bit
+            //For the next significant bit
+            spriteBit--;    
         }
     }
 }
@@ -398,6 +410,102 @@ void opEXA1(CHIP8State *state, uint8_t *code) {
     if (state -> keyState[ks] == 0) {
         state -> pc += 2;
     }
+}
+
+void opFX07(CHIP8State *state, uint8_t *code) {
+    //MOV VX DELAY
+    uint8_t reg = code[0] & 0xf;
+    state -> V[reg] = state -> delay;
+}
+
+void opFX0A(CHIP8State *state, uint8_t *code) {
+    //KEY
+    uint8_t reg = code[0] & 0xf;
+
+    if (state -> keyWait == 0) {
+        //1 flag each for the 16 keys
+        memcpy(&(state -> keyState), &(state -> savedKeyState), 16);    
+        state -> keyWait = 1;
+
+        //don't proceed and wait by "resetting" the program counter
+        state -> pc -= 2;                                               
+    }
+    else {
+        //Go through flags and see if any key states have changed, return 
+        for (int i = 0; i < 16; i++) {
+            if ((state -> savedKeyState[i] == 0) && (state -> keyState[i] == 1)) {
+                state -> keyWait = 0;
+                state -> V[reg] = i;
+            }
+
+            //Copy key state to detect if a key was pressed, released and then pressed again
+            state -> savedKeyState[i] = state -> keyState[i];
+        }
+    }
+}
+
+void opFX15(CHIP8State *state, uint8_t *code) {
+    //MOV DELAY VX
+    uint8_t reg = code[0] & 0xf;
+    state -> delay = state -> V[reg];
+}
+
+void opFX18(CHIP8State *state, uint8_t *code) {
+    //MOV SOUND
+    uint8_t reg = code[0] & 0xf;
+    state -> sound = state -> V[reg];
+}
+
+void opFX1E(CHIP8State *state, uint8_t *code) {
+    //ADI
+    uint8_t reg = code[0] & 0xf;
+    state -> I += state -> V[reg];
+}
+
+void opFX29(CHIP8State *state, uint8_t *code) {
+    //SPRITECHAR
+    uint8_t reg = code[0] & 0xf;
+    state -> I = FONT_BASE + ((state -> V[reg]) * 5);
+}
+
+void opFX33(CHIP8State *state, uint8_t *code) {
+    //MOVBCD
+    //Convert value of VX to 3 decimal digits and store these in memory at addresses I, I + 1, I + 2
+    uint8_t reg = code[0] & 0xf;
+    uint8_t regValue = state -> V[reg];
+
+    uint8_t oneDigit = regValue % 10;
+    regValue = regValue / 10;
+    uint8_t tenDigit = regValue % 10;
+    uint8_t hundredDigit = regValue / 10;
+
+    state -> memory[state -> I] = hundredDigit;
+    state -> memory[(state -> I) + 1] = tenDigit;
+    state -> memory[(state -> I) + 2] = oneDigit;
+}
+
+void opFX55(CHIP8State *state, uint8_t *code) {
+    //MOVM STORE I
+    uint8_t reg = code[0] & 0xf;
+
+    for (int i = 0; i < reg; i++) {
+        state -> memory[(state -> I) + i] = state -> V[i];
+    }
+
+    //Original CHIP-8 interpreter sets I to new value I + X + 1
+    //Modern interpreters leave I's value alone
+    state -> I += reg + 1;
+}
+
+void opFX65(CHIP8State *state, uint8_t *code) {
+    //MOVM FILL V0-VF
+    uint8_t reg = code[0] & 0xf;
+
+    for (int i = 0; i < reg; i++) {
+        state -> V[i] = state -> memory[(state -> I) + i];
+    }
+
+    state -> I += reg + 1;
 }
 
 void emulateCHIP8(CHIP8State *state) {
