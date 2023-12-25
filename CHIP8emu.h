@@ -8,6 +8,7 @@ typedef struct CHIP8State {
     uint8_t *memory;
     uint8_t *screen;
     uint8_t halt;
+    uint8_t keyState[16];
 } CHIP8State;
 
 CHIP8State* initCHIP8(void);

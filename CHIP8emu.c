@@ -15,10 +15,19 @@ CHIP8State* initCHIP8(void) {
     return s;
 }
 
+/*
+//Instructions are 2 bytes = 4 nibbles
+//First hex number = first nibble (e.g. 1 in 1NNN)
+//X = second nibble, used to look up one of the 16 registers (e.g X in 6XNN)
+//Y = third nibble, also used to look up registers (e.g. Y in 8XY0)
+//N = fourth nibble, a 4-bit number (e.g. N in DXYN)
+//NN = third and fourth nibbles, an 8-bit number (e.g. NN in 6XNN)
+//NNN = second, third and fourth nibbles, a 12-bit immediate memory address (e.g. NNN in 1NNN)
+*/
 void disassembleCHIP8opcodes(uint8_t *buffer, int pc) {
     uint8_t *code = &buffer[pc];
     uint8_t firstNibble = code[0] >> 4;                     //>> shifts code[0] to the right by 4 bits
-    printf("%04x %02x %02x ", pc, code[0], code[1]);
+    printf("%04x %02x %02x ", pc, code[0], code[1]);        //code[0] is first instruction byte, code[1] is the second
 
     switch (firstNibble) {
         case 0x0:
@@ -30,8 +39,7 @@ void disassembleCHIP8opcodes(uint8_t *buffer, int pc) {
             break;
 
         //code[0] & 0xf is bitmasking
-        //0xf = 0b1111 i.e. 0xf is the bitmask to mask out 4 bits i.e. a nibble
-        //The end result is the value of the lower 4 bits
+        //0xf = 0b1111 so 0xf is the bitmask to mask out 4 bits i.e. a nibble, in this case the first
         case 0x1: printf("%-10s $%01x%02x", "JUMP", code[0] & 0xf, code[1]); break;              //1NNN: Jump to address NNN
         case 0x2: printf("%-10s $%01x%02x", "CALL", code[0] & 0xf, code[1]); break;              //2NNN: Execute subroutine starting at address NNN
         case 0x3: printf("%-10s V%01X,#$%02x", "SKIP_EQ", code[0] & 0xf, code[1]); break;        //3XNN: Skip following instruction if value of VX equals NN
@@ -40,8 +48,8 @@ void disassembleCHIP8opcodes(uint8_t *buffer, int pc) {
         case 0x6: printf("%-10s V%01X,#$%02x", "MVI", code[0] & 0xf, code[1]); break;            //6XNN: Store NN in VX
         case 0x7: printf("%-10s V%01X,#$%02x", "ADI", code[0] & 0xf, code[1]); break;            //7XNN: Add NN to VX
         case 0x8:
-            uint8_t secondNibble = code[1] >> 4;
-            switch (secondNibble) {
+            uint8_t fourthNibble = code[1] >> 4;
+            switch (fourthNibble) {
                 case 0: printf("%-10s V%01X,V%01X", "MOV", code[0] & 0xf, code[1] >> 4); break;   //8XY0: Store value of VY in VX
                 case 1: printf("%-10s V%01X,V%01X", "OR", code[0] & 0xf, code[1] >> 4); break;    //8XY1: Set VX to (VX OR VY)
                 case 2: printf("%-10s V%01X,V%01X", "AND", code[0] & 0xf, code[1] >> 4); break;   //8XY2: Set VX to (VX AND VY)
@@ -170,7 +178,7 @@ void op2NNN(CHIP8State *state, uint8_t *code) {
 }
 
 void op3XNN(CHIP8State *state, uint8_t *code) {
-    //SKIP_EQ NNN
+    //SKIP_EQ NN
     uint8_t reg = code[0] & 0xf;
     
     if (state -> V[reg] == code[1]) {
@@ -181,7 +189,7 @@ void op3XNN(CHIP8State *state, uint8_t *code) {
 }
 
 void op4XNN(CHIP8State *state, uint8_t *code) {
-    //SKIP_NE
+    //SKIP_NE NN
     uint8_t reg = code[0] & 0xf;
 
     if (state -> V[reg] != code[1]) {
@@ -310,46 +318,154 @@ void op8XYE(CHIP8State *state, uint8_t *code) {
     state -> V[0xF] = msb;
 }
 
-void emulateCHIP8opcodes(CHIP8State *state) {
-    uint8_t *opcode = &state -> memory[state -> pc];
+void op9XY0(CHIP8State *state, uint8_t *code) {
+    //SKIP_NE VY
+    uint8_t regX = code[0] & 0xf;
+    uint8_t regY = (code[1] & 0xf) >> 4;
 
-    int firstNibble = (*opcode & 0xf0) >> 4;
+    if (state -> V[regX] != state -> V[regY]) {
+        state -> pc +=2;
+    }
+
+    state -> pc += 2;
+}
+
+void opANNN(CHIP8State *state, uint8_t *code) {
+    //MVI
+    state -> I = ((code[0] & 0xf) << 8) | code[1];
+    state -> pc += 2;
+}
+
+void opBNNN(CHIP8State *state, uint8_t *code) {
+    //JUMP +V0
+    uint16_t target = ((code[0] & 0xf) << 8) | code[1];
+    target += state -> V[0];
+    
+    if (target == (state -> pc)) {
+        state -> halt = 1;
+        printf("Set a halt flag as an infinite loop was detected.\n");
+    }
+
+    state -> pc = target;
+}
+
+void opCXNN(CHIP8State *state, uint8_t *code) {
+    //RNDMSK
+    uint8_t reg = code[0] & 0xf;
+    state -> V[reg] = random() & code[1];   //random() is from the stdlib
+    state -> pc += 2;
+}
+
+void opDXYN(CHIP8State *state, uint8_t *code) {
+    //SPRITE
+    uint8_t regX = code[0] & 0xf;
+    uint8_t regY = (code[1] & 0xf) >> 1;
+
+    //Set X and Y coordinates to values of VX and VY respectively, and VF to 0
+    //Go through N rows and draw the 8 pixels in the row, stop entirely if you reach the bottom of the screen
+    uint8_t x = state -> V[regX];
+    uint8_t y = state -> V[regY];
+    state -> V[0xF] = 0;
+    int rows = code[1] & 0xf;
+
+    for (int i = 0; i < rows; i++) {
+        uint8_t *sprite = &(state -> memory[(state -> I) + i]);
+        int spriteBit = 7;
+
+        //For each of the 8 pixels/bits in the row, going from left to right i.e. most to least significant bit
+        for (int j = x; j < (x + 8) && j < 64; j++) {
+            uint8_t byteInRow = j / 8;
+            uint8_t bitInByte = j % 8;
+            uint8_t srcBit = (*sprite >> spriteBit) & 0x1;
+
+            if (srcBit) {
+                uint8_t *destBytePointer = &(state -> screen[(i + y) * (64 / 8) + byteInRow]);
+                uint8_t destByte = *destBytePointer;
+                uint8_t destMask = (0x80 >> bitInByte); //0x80 = 0b10000000
+                uint8_t destBit = destByte && destMask;
+
+                srcBit = srcBit << (7 - bitInByte); //srcBit is now either 0 or 1
+
+                //If current pixel = on and pixel at (X,Y) is also on, turn off pixel and set VF to 1
+                //Otherwise, draw if current pixel = on and pixel at (X,Y) is off
+                //This is an XOR
+                if (srcBit && destBit) {
+                    state -> V[0xF] = 1;
+                }
+
+                destBit ^= srcBit;
+                destByte = (destByte & ~destMask) | destBit;    //~ flips bits, so this line essentially reverses the mask
+                *destBytePointer = destByte;
+            }
+
+            spriteBit--;    //For the next significant bit
+        }
+    }
+}
+
+void opEX9E(CHIP8State *state, uint8_t *code) {
+    //SKIPKEY_Y
+    uint8_t reg = code[0] & 0xf;
+    uint8_t ks = state -> V[reg];
+    if (state -> keyState[ks] != 0) {
+        state -> pc += 2;
+    }
+}
+
+void opEXA1(CHIP8State *state, uint8_t *code) {
+    //SKIPKEY_N
+    uint8_t reg = code[0] & 0xf;
+    uint8_t ks = state -> V[reg];
+    if (state -> keyState[ks] == 0) {
+        state -> pc += 2;
+    }
+}
+
+void emulateCHIP8opcodes(CHIP8State *state) {
+    uint8_t *code = &state -> memory[state -> pc];
+
+    uint8_t firstNibble = (*code & 0xf0) >> 4;
     switch (firstNibble) {
         case 0x00: 
-            switch (opcode[1]) {
-                case 0xe0: op00E0(state, opcode); break;
-                case 0xee: op00EE(state, opcode); break;
+            switch (code[1]) {
+                case 0xe0: op00E0(state, code); break;
+                case 0xee: op00EE(state, code); break;
                 default: unimplementedInstruction(state); break;
             }
             break;
-        case 0x01: op1NNN(state, opcode); break;
-        case 0x02: op2NNN(state, opcode); break;
-        case 0x03: op3XNN(state, opcode); break;
-        case 0x04: op4XNN(state, opcode); break;
-        case 0x05: op5XY0(state, opcode); break;
-        case 0x06: op6XNN(state, opcode); break;
-        case 0x07: op7XNN(state, opcode); break;
+        case 0x01: op1NNN(state, code); break;
+        case 0x02: op2NNN(state, code); break;
+        case 0x03: op3XNN(state, code); break;
+        case 0x04: op4XNN(state, code); break;
+        case 0x05: op5XY0(state, code); break;
+        case 0x06: op6XNN(state, code); break;
+        case 0x07: op7XNN(state, code); break;
         case 0x08:
-            int secondNibble = opcode[1] & 0xf;
-            switch (secondNibble) {
-                case 0: op8XY0(state, opcode); break;
-                case 1: op8XY1(state, opcode); break;
-                case 2: op8XY2(state, opcode); break;
-                case 3: op8XY3(state, opcode); break;
-                case 4: op8XY4(state, opcode); break;
-                case 5: op8XY5(state, opcode); break;
-                case 6: op8XY6(state, opcode); break;
-                case 7: op8XY7(state, opcode); break;
-                case 0xe: op8XYE(state, opcode); break;
+            uint8_t fourthNibble = code[1] & 0xf;
+            switch (fourthNibble) {
+                case 0: op8XY0(state, code); break;
+                case 1: op8XY1(state, code); break;
+                case 2: op8XY2(state, code); break;
+                case 3: op8XY3(state, code); break;
+                case 4: op8XY4(state, code); break;
+                case 5: op8XY5(state, code); break;
+                case 6: op8XY6(state, code); break;
+                case 7: op8XY7(state, code); break;
+                case 0xe: op8XYE(state, code); break;
                 default: unimplementedInstruction(state); break;
             }
-        case 0x09: unimplementedInstruction(state); break;
+        case 0x09: op9XY0(state, code); break;
         
-        case 0x0a: unimplementedInstruction(state); break;
-        case 0x0b: unimplementedInstruction(state); break;
-        case 0x0c: unimplementedInstruction(state); break;
-        case 0x0d: unimplementedInstruction(state); break;
-        case 0x0e: unimplementedInstruction(state); break;
+        case 0x0a: opANNN(state, code); break;
+        case 0x0b: opBNNN(state, code); break;
+        case 0x0c: opCXNN(state, code); break;
+        case 0x0d: opDXYN(state, code); break;
+        case 0x0e:
+            switch (code[1]) {
+                case 0x9e: opEX9E(state, code); break;
+                case 0xa1: opEXA1(state, code); break;
+                default: unimplementedInstruction(state); break;
+            } 
         case 0x0f: unimplementedInstruction(state); break;
     }
 }
