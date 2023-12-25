@@ -24,7 +24,7 @@ CHIP8State* initCHIP8(void) {
 //NN = third and fourth nibbles, an 8-bit number (e.g. NN in 6XNN)
 //NNN = second, third and fourth nibbles, a 12-bit immediate memory address (e.g. NNN in 1NNN)
 */
-void disassembleCHIP8opcodes(uint8_t *buffer, int pc) {
+void decodeCHIP8(uint8_t *buffer, int pc) {
     uint8_t *code = &buffer[pc];
     uint8_t firstNibble = code[0] >> 4;                     //>> shifts code[0] to the right by 4 bits
     printf("%04x %02x %02x ", pc, code[0], code[1]);        //code[0] is first instruction byte, code[1] is the second
@@ -145,15 +145,14 @@ void unimplementedInstruction(CHIP8State *state) {
 
 void op00E0(CHIP8State *state, uint8_t *code) {
     //CLS
-    memset(state -> screen, 0, (64 * 32) / 8);   //copies 0 into display (64x32) bytes; 1 bit per pixel, 8 bits in a byte = 256 bytes
-    state -> pc += 2;
+    memset(state -> screen, 0, (64 * 32) / 8);   //Copies 0 into display (64x32) bytes; 1 bit per pixel, 8 bits in a byte = 256 bytes
 }
 
 void op00EE(CHIP8State *state, uint8_t *code) {
     //RTS
     uint16_t target = (state -> memory[state -> sp] << 8) | (state -> memory[(state -> sp) + 1]);   //logical OR
     state -> sp += 2;
-    state -> pc += target;
+    state -> pc = target;
 }
 
 void op1NNN(CHIP8State *state, uint8_t *code) {
@@ -184,8 +183,6 @@ void op3XNN(CHIP8State *state, uint8_t *code) {
     if (state -> V[reg] == code[1]) {
         state -> pc += 2;
     }
-
-    state -> pc += 2;
 }
 
 void op4XNN(CHIP8State *state, uint8_t *code) {
@@ -195,8 +192,6 @@ void op4XNN(CHIP8State *state, uint8_t *code) {
     if (state -> V[reg] != code[1]) {
         state -> pc += 2;
     }
-
-    state -> pc += 2;
 }
 
 void op5XY0(CHIP8State *state, uint8_t *code) {
@@ -207,22 +202,18 @@ void op5XY0(CHIP8State *state, uint8_t *code) {
     if (state -> V[regX] == state -> V[regY]) {
         state -> pc +=2;
     }
-
-    state -> pc += 2;
 }
 
 void op6XNN(CHIP8State *state, uint8_t *code) {
-    //MVI
+    //MVI NN
     uint8_t reg = code[0] & 0xf;
     state -> V[reg] = code[1];
-    state -> pc += 2;
 }
 
 void op7XNN(CHIP8State *state, uint8_t *code) {
     //ADI
     uint8_t reg = code[0] & 0xf;
     state -> V[reg] += code[1];
-    state -> pc += 2;
 }
 
 void op8XY0(CHIP8State *state, uint8_t *code) {
@@ -230,7 +221,6 @@ void op8XY0(CHIP8State *state, uint8_t *code) {
     uint8_t regX = code[0] & 0xf;
     uint8_t regY = (code[1] & 0xf) >> 4;
     state -> V[regX] = state -> V[regY];
-    state -> pc += 2;
 }
 
 void op8XY1(CHIP8State *state, uint8_t *code) {
@@ -238,7 +228,6 @@ void op8XY1(CHIP8State *state, uint8_t *code) {
     uint8_t regX = code[0] & 0xf;
     uint8_t regY = (code[1] & 0xf) >> 4;
     state -> V[regX] |= state -> V[regY];
-    state -> pc += 2;
 }
 
 void op8XY2(CHIP8State *state, uint8_t *code) {
@@ -246,7 +235,6 @@ void op8XY2(CHIP8State *state, uint8_t *code) {
     uint8_t regX = code[0] & 0xf;
     uint8_t regY = (code[1] & 0xf) >> 4;
     state -> V[regX] &= state -> V[regY];
-    state -> pc += 2;
 }
 
 void op8XY3(CHIP8State *state, uint8_t *code) {
@@ -254,7 +242,6 @@ void op8XY3(CHIP8State *state, uint8_t *code) {
     uint8_t regX = code[0] & 0xf;
     uint8_t regY = (code[1] & 0xf) >> 4;
     state -> V[regX] ^= state -> V[regY];
-    state -> pc += 2;
 }
 
 void op8XY4(CHIP8State *state, uint8_t *code) {
@@ -269,8 +256,6 @@ void op8XY4(CHIP8State *state, uint8_t *code) {
     //Has carry occured? Bitmask here is 0xff00 = 0b111111100000000
     uint8_t carry = result & 0xff00;
     state -> V[0xF] = carry;
-
-    state -> pc += 2;
 }
 
 void op8XY5(CHIP8State *state, uint8_t *code) {
@@ -282,8 +267,6 @@ void op8XY5(CHIP8State *state, uint8_t *code) {
     //Has borrow occured?
     uint8_t borrow = (state -> V[regX]) > (state -> V[regY]);
     state -> V[0xF] = borrow;
-
-    state -> pc += 2;
 }
 
 void op8XY6(CHIP8State *state, uint8_t *code) {
@@ -326,14 +309,11 @@ void op9XY0(CHIP8State *state, uint8_t *code) {
     if (state -> V[regX] != state -> V[regY]) {
         state -> pc +=2;
     }
-
-    state -> pc += 2;
 }
 
 void opANNN(CHIP8State *state, uint8_t *code) {
-    //MVI
+    //MVI NNN
     state -> I = ((code[0] & 0xf) << 8) | code[1];
-    state -> pc += 2;
 }
 
 void opBNNN(CHIP8State *state, uint8_t *code) {
@@ -353,7 +333,6 @@ void opCXNN(CHIP8State *state, uint8_t *code) {
     //RNDMSK
     uint8_t reg = code[0] & 0xf;
     state -> V[reg] = random() & code[1];   //random() is from the stdlib
-    state -> pc += 2;
 }
 
 void opDXYN(CHIP8State *state, uint8_t *code) {
@@ -421,8 +400,11 @@ void opEXA1(CHIP8State *state, uint8_t *code) {
     }
 }
 
-void emulateCHIP8opcodes(CHIP8State *state) {
-    uint8_t *code = &state -> memory[state -> pc];
+void emulateCHIP8(CHIP8State *state) {
+    //Fetch and decode instruction, also it's best to increment program counter here
+    uint8_t *code = &(state -> memory[state -> pc]);
+    decodeCHIP8(state -> memory, state -> pc);
+    state -> pc += 2;
 
     uint8_t firstNibble = (*code & 0xf0) >> 4;
     switch (firstNibble) {
