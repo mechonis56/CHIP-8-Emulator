@@ -12,9 +12,9 @@ typedef struct CHIP8State {
 } CHIP8State;
 
 CHIP8State* initCHIP8(void);
-void disassembleCHIP8opcodes(uint8_t *buffer, int pc);
+void decodeCHIP8(uint8_t *buffer, int pc);
 void unimplementedInstruction(CHIP8State *state);
-void emulateCHIP8opcodes(CHIP8State *state);
+void emulateCHIP8(CHIP8State *state);
 
 void op00E0(CHIP8State *state, uint8_t *code);
 void op00EE(CHIP8State *state, uint8_t *code);
