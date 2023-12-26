@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 typedef struct CHIP8State {
     uint16_t pc;
     uint16_t sp;

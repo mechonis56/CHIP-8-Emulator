@@ -144,7 +144,7 @@ void decodeCHIP8(uint8_t *buffer, int pc) {
 }
 
 void unimplementedInstruction(CHIP8State *state) {
-    disassembleCHIP8(state -> memory, state -> pc); //Program counter has advanced by 2, needs to be set back
+    decodeCHIP8(state -> memory, state -> pc);      //Program counter has advanced by 2, needs to be set back
     printf("Error: Unimplemented instruction.\n");
     exit(1);
 }
@@ -261,8 +261,14 @@ void op8XY4(CHIP8State *state, uint8_t *code) {
     state -> V[regX] = result & 0xff;
     
     //Has carry occured? Bitmask here is 0xff00 = 0b111111100000000
-    uint8_t carry = result & 0xff00;
-    state -> V[0xF] = carry;
+    uint16_t carry = result & 0xff00;
+    if (carry) {
+        state -> V[0xF] = 1;
+    }
+    else {
+        state -> V[0xF] = 0;
+    }
+    
 }
 
 void op8XY5(CHIP8State *state, uint8_t *code) {
@@ -339,8 +345,8 @@ void opBNNN(CHIP8State *state, uint8_t *code) {
 void opCXNN(CHIP8State *state, uint8_t *code) {
     //RNDMSK
     uint8_t reg = code[0] & 0xf;
-    //random() is from the stdlib
-    state -> V[reg] = random() & code[1];   
+    //rand() is from the stdlib
+    state -> V[reg] = rand() & code[1];   
 }
 
 void opDXYN(CHIP8State *state, uint8_t *code) {
@@ -475,8 +481,7 @@ void opFX33(CHIP8State *state, uint8_t *code) {
     uint8_t regValue = state -> V[reg];
 
     uint8_t oneDigit = regValue % 10;
-    regValue = regValue / 10;
-    uint8_t tenDigit = regValue % 10;
+    uint8_t tenDigit = regValue % 100;
     uint8_t hundredDigit = regValue / 10;
 
     state -> memory[state -> I] = hundredDigit;
