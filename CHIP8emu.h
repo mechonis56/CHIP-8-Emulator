@@ -16,6 +16,7 @@ typedef struct CHIP8State {
 } CHIP8State;
 
 CHIP8State* initCHIP8(void);
+void freeCHIP8(CHIP8State *state);
 void decodeCHIP8(uint8_t *buffer, int pc);
 void unimplementedInstruction(CHIP8State *state);
 void emulateCHIP8(CHIP8State *state);

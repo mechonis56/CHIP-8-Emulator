@@ -18,7 +18,25 @@ CHIP8State* initCHIP8(void) {
 
     memcpy(&(s -> memory[FONT_BASE]), font4x5, FONT_SIZE);   //Put font in first 512 bytes of memory
 
+    printf("Initialised CHIP8State.\n");
     return s;
+}
+
+void freeCHIP8(CHIP8State *state) {
+    if (state -> memory != NULL) {
+        printf("Freeing CHIP8State memory...\n");
+        free(state -> memory);
+    }
+    
+    if (state -> screen != NULL) {
+        printf("Freeing CHIP8State screen...\n");
+        free(state -> screen);
+    }
+
+    if (state != NULL) {
+        printf("Freeing CHIP8State...\n");
+        free(state);
+    }
 }
 
 /*
