@@ -85,7 +85,6 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-
     //Start up SDL and create a window
     if (!initSDL()) {
         printf("Failed to initialise.\n");
@@ -107,8 +106,53 @@ int main(int argc, char **argv) {
                 }
 
                 //Handle key presses and releases
-                if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) {
-                    
+                //Original CHIP-8 keypad was 123C, 456D, 789E, A0BF
+                //Modern CHIP-8 emulators typically use 1234, QWER, ASDF, ZXCV to replace original keypad
+                if (e.type == SDL_KEYDOWN) {
+                    switch (e.key.keysym.sym) {
+                        case SDLK_1: keyDown(machine -> state, 1);
+                        case SDLK_2: keyDown(machine -> state, 2);
+                        case SDLK_3: keyDown(machine -> state, 3);
+                        case SDLK_4: keyDown(machine -> state, 0xc);
+
+                        case SDLK_q: keyDown(machine -> state, 4);
+                        case SDLK_w: keyDown(machine -> state, 5);
+                        case SDLK_e: keyDown(machine -> state, 6);
+                        case SDLK_r: keyDown(machine -> state, 0xd);
+                        
+                        case SDLK_a: keyDown(machine -> state, 7);
+                        case SDLK_s: keyDown(machine -> state, 8);
+                        case SDLK_d: keyDown(machine -> state, 9);
+                        case SDLK_f: keyDown(machine -> state, 0xe);
+
+                        case SDLK_z: keyDown(machine -> state, 0xa);
+                        case SDLK_x: keyDown(machine -> state, 0);
+                        case SDLK_c: keyDown(machine -> state, 0xb);
+                        case SDLK_v: keyDown(machine -> state, 0xf);
+                    }
+                }
+                else if (e.type == SDL_KEYUP) {
+                    switch (e.key.keysym.sym) {
+                        case SDLK_1: keyUp(machine -> state, 1);
+                        case SDLK_2: keyUp(machine -> state, 2);
+                        case SDLK_3: keyUp(machine -> state, 3);
+                        case SDLK_4: keyUp(machine -> state, 0xc);
+
+                        case SDLK_q: keyUp(machine -> state, 4);
+                        case SDLK_w: keyUp(machine -> state, 5);
+                        case SDLK_e: keyUp(machine -> state, 6);
+                        case SDLK_r: keyUp(machine -> state, 0xd);
+                        
+                        case SDLK_a: keyUp(machine -> state, 7);
+                        case SDLK_s: keyUp(machine -> state, 8);
+                        case SDLK_d: keyUp(machine -> state, 9);
+                        case SDLK_f: keyUp(machine -> state, 0xe);
+
+                        case SDLK_z: keyUp(machine -> state, 0xa);
+                        case SDLK_x: keyUp(machine -> state, 0);
+                        case SDLK_c: keyUp(machine -> state, 0xb);
+                        case SDLK_v: keyUp(machine -> state, 0xf);
+                    }
                 }
             }
 

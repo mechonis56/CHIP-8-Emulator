@@ -18,5 +18,5 @@ void freeMachine(CHIP8Machine *machine);
 int openROM(CHIP8Machine *machine, char *filename);
 void executeCPU();
 
-void keyDown(uint8_t key);
-void keyUp(uint8_t key);
+void keyDown(CHIP8State *state, uint8_t key);
+void keyUp(CHIP8State *state, uint8_t key);

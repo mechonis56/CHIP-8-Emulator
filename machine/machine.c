@@ -72,3 +72,51 @@ int openROM(CHIP8Machine *machine, char *filename) {
 
     return 0;
 }
+
+void keyDown(CHIP8State *state, uint8_t key) {
+    switch (key) {
+        case 0: state -> keyState[0] = 1; break;
+        case 1: state -> keyState[1] = 1; break;
+        case 2: state -> keyState[2] = 1; break;
+        case 3: state -> keyState[3] = 1; break;
+        case 4: state -> keyState[4] = 1; break;
+        case 5: state -> keyState[5] = 1; break;
+        case 6: state -> keyState[6] = 1; break;
+        case 7: state -> keyState[7] = 1; break;
+        case 8: state -> keyState[8] = 1; break;
+        case 9: state -> keyState[9] = 1; break;
+
+        case 0xa: state -> keyState[0xA] = 1; break;
+        case 0xb: state -> keyState[0xB] = 1; break;
+        case 0xc: state -> keyState[0xC] = 1; break;
+        case 0xd: state -> keyState[0xD] = 1; break;
+        case 0xe: state -> keyState[0xE] = 1; break;
+        case 0xf: state -> keyState[0xF] = 1; break;
+
+        default: return;
+    }
+}
+
+void keyUp(CHIP8State *state, uint8_t key) {
+    switch (key) {
+        case 0: state -> keyState[0] = 0; break;
+        case 1: state -> keyState[1] = 0; break;
+        case 2: state -> keyState[2] = 0; break;
+        case 3: state -> keyState[3] = 0; break;
+        case 4: state -> keyState[4] = 0; break;
+        case 5: state -> keyState[5] = 0; break;
+        case 6: state -> keyState[6] = 0; break;
+        case 7: state -> keyState[7] = 0; break;
+        case 8: state -> keyState[8] = 0; break;
+        case 9: state -> keyState[9] = 0; break;
+
+        case 0xa: state -> keyState[0xA] = 0; break;
+        case 0xb: state -> keyState[0xB] = 0; break;
+        case 0xc: state -> keyState[0xC] = 0; break;
+        case 0xd: state -> keyState[0xD] = 0; break;
+        case 0xe: state -> keyState[0xE] = 0; break;
+        case 0xf: state -> keyState[0xF] = 0; break;
+        
+        default: return;
+    }
+}
