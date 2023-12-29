@@ -52,7 +52,7 @@ bool initSDL() {
         }
     }
 
-    printf("SDL succesfully initialised.\n");
+    printf("SDL successfully initialised.\n");
     return success;
 }
 
@@ -156,9 +156,14 @@ int main(int argc, char **argv) {
                 }
             }
 
+            //Execute CHIP-8 instructions
+            //CHIP-8 updates the display at 60Hz, so need to time that here as well
+            executeCPU(machine);
+
             //Clear screen
             SDL_RenderClear(gRenderer);
 
+            //TODO: Need to pass the pixels into a surface/texture and render here
             //Render texture to screen
             //SDL_RenderCopy(gRenderer, texture, NULL, NULL);
 

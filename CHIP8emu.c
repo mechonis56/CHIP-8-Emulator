@@ -56,106 +56,106 @@ void decodeCHIP8(uint8_t *buffer, int pc) {
     switch (firstNibble) {
         case 0x0:
             switch (code[1]) {
-                case 0xe0: printf("%-10s", "CLS"); break;   //00E0: Clear the screen
-                case 0xee: printf("%-10s", "RTS"); break;   //00EE: Return from a subroutine
-                default: printf("UNKNOWN 0"); break;
+                case 0xe0: printf("%-10s", "CLS\n"); break;   //00E0: Clear the screen
+                case 0xee: printf("%-10s", "RTS\n"); break;   //00EE: Return from a subroutine
+                default: printf("UNKNOWN 0\n"); break;
             }
             break;
 
         //code[0] & 0xf is bitmasking
         //0xf = 0b1111 so 0xf is the bitmask to mask out 4 bits i.e. a nibble, in this case the first
-        case 0x1: printf("%-10s $%01x%02x", "JUMP", code[0] & 0xf, code[1]); break;              //1NNN: Jump to address NNN
-        case 0x2: printf("%-10s $%01x%02x", "CALL", code[0] & 0xf, code[1]); break;              //2NNN: Execute subroutine starting at address NNN
-        case 0x3: printf("%-10s V%01X,#$%02x", "SKIP_EQ", code[0] & 0xf, code[1]); break;        //3XNN: Skip following instruction if value of VX equals NN
-        case 0x4: printf("%-10s V%01X,#$%02x", "SKIP_NE", code[0 ]& 0xf, code[1]); break;        //4XNN: Skip following instruction if value of VX doesn't equal NN
-        case 0x5: printf("%-10s V%01X,V%01X", "SKIP_EQ", code[0] & 0xf, code[1] >> 4); break;    //5XY0: Skip following instruction if value of VX equals value of VY
-        case 0x6: printf("%-10s V%01X,#$%02x", "MVI", code[0] & 0xf, code[1]); break;            //6XNN: Store NN in VX
-        case 0x7: printf("%-10s V%01X,#$%02x", "ADI", code[0] & 0xf, code[1]); break;            //7XNN: Add NN to VX
+        case 0x1: printf("%-10s $%01x%02x", "JUMP\n", code[0] & 0xf, code[1]); break;              //1NNN: Jump to address NNN
+        case 0x2: printf("%-10s $%01x%02x", "CALL\n", code[0] & 0xf, code[1]); break;              //2NNN: Execute subroutine starting at address NNN
+        case 0x3: printf("%-10s V%01X,#$%02x", "SKIP_EQ\n", code[0] & 0xf, code[1]); break;        //3XNN: Skip following instruction if value of VX equals NN
+        case 0x4: printf("%-10s V%01X,#$%02x", "SKIP_NE\n", code[0 ]& 0xf, code[1]); break;        //4XNN: Skip following instruction if value of VX doesn't equal NN
+        case 0x5: printf("%-10s V%01X,V%01X", "SKIP_EQ\n", code[0] & 0xf, code[1] >> 4); break;    //5XY0: Skip following instruction if value of VX equals value of VY
+        case 0x6: printf("%-10s V%01X,#$%02x", "MVI\n", code[0] & 0xf, code[1]); break;            //6XNN: Store NN in VX
+        case 0x7: printf("%-10s V%01X,#$%02x", "ADI\n", code[0] & 0xf, code[1]); break;            //7XNN: Add NN to VX
         case 0x8:
             uint8_t fourthNibble = code[1] >> 4;
             switch (fourthNibble) {
-                case 0: printf("%-10s V%01X,V%01X", "MOV", code[0] & 0xf, code[1] >> 4); break;   //8XY0: Store value of VY in VX
-                case 1: printf("%-10s V%01X,V%01X", "OR", code[0] & 0xf, code[1] >> 4); break;    //8XY1: Set VX to (VX OR VY)
-                case 2: printf("%-10s V%01X,V%01X", "AND", code[0] & 0xf, code[1] >> 4); break;   //8XY2: Set VX to (VX AND VY)
-                case 3: printf("%-10s V%01X,V%01X", "XOR", code[0] & 0xf, code[1] >> 4); break;   //8XY3: Set VX to (VX XOR VY)
+                case 0: printf("%-10s V%01X,V%01X", "MOV\n", code[0] & 0xf, code[1] >> 4); break;   //8XY0: Store value of VY in VX
+                case 1: printf("%-10s V%01X,V%01X", "OR\n", code[0] & 0xf, code[1] >> 4); break;    //8XY1: Set VX to (VX OR VY)
+                case 2: printf("%-10s V%01X,V%01X", "AND\n", code[0] & 0xf, code[1] >> 4); break;   //8XY2: Set VX to (VX AND VY)
+                case 3: printf("%-10s V%01X,V%01X", "XOR\n", code[0] & 0xf, code[1] >> 4); break;   //8XY3: Set VX to (VX XOR VY)
 
                 //"." indicates instruction modifies VF
 
                 //8XY4: Add value of VY to VX; set VF to 01 if a carry occurs, else set VF to 00
-                case 4: printf("%-10s V%01X,V%01X", "ADD.", code[0] & 0xf, code[1] >> 4); break;
+                case 4: printf("%-10s V%01X,V%01X", "ADD.\n", code[0] & 0xf, code[1] >> 4); break;
 
                 //8XY5: Subtract value of VY from VX; set VF to 01 if a borrow occurs, else set VF to 00  
-                case 5: printf("%-10s V%01X,V%01X,V%01X", "SUB.", code[0] & 0xf, code[0] & 0xf, code[1] >> 4); break;
+                case 5: printf("%-10s V%01X,V%01X,V%01X", "SUB.\n", code[0] & 0xf, code[0] & 0xf, code[1] >> 4); break;
 
                 //8XY6: Store value of VY shifted right one bit in VX; set VF to least significant bit prior to shift; VY unchanged   
-                case 6: printf("%-10s V%01X,V%01X", "SHR.", code[0] & 0xf, code[1] >> 4); break;
+                case 6: printf("%-10s V%01X,V%01X", "SHR.\n", code[0] & 0xf, code[1] >> 4); break;
 
                 //8XY7: Set VX to value of VY minus VX; set VF to 01 if a borrow occurs, else set VF to 00  
-                case 7: printf("%-10s V%01X,V%01X,V%01X", "SUBB.", code[0] & 0xf, code[1] >> 4, code[1] >> 4); break;
+                case 7: printf("%-10s V%01X,V%01X,V%01X", "SUBB.\n", code[0] & 0xf, code[1] >> 4, code[1] >> 4); break;
 
                 //8XYE: Store value of VY shifted left one bit in VX; set VF to most significant bit prior to shift; VY unchanged 
-                case 0xe: printf("%-10s V%01X,V%01X", "SHL.", code[0] & 0xf, code[1] >> 4); break;
+                case 0xe: printf("%-10s V%01X,V%01X", "SHL.\n", code[0] & 0xf, code[1] >> 4); break;
 
-                default: printf("UNKNOWN 8"); break;
+                default: printf("UNKNOWN 8\n"); break;
             }
             break;
         //9XY0: Skip following instruction if value of VX doesn't equal value of VY
-        case 0x9: printf("%-10s V%01X,V%01X", "SKIP_NE", code[0] & 0xf, code[1] >> 4); break; 
+        case 0x9: printf("%-10s V%01X,V%01X", "SKIP_NE\n", code[0] & 0xf, code[1] >> 4); break; 
 
         //ANNN: Store memory address NNN in I
-        case 0xa: printf("%-10s I,#$%01x%02x", "MVI", code[0] & 0xf, code[1]); break;
+        case 0xa: printf("%-10s I,#$%01x%02x", "MVI\n", code[0] & 0xf, code[1]); break;
 
         //BNNN: Jump to address NNN + V0 
-        case 0xb: printf("%-10s $%01x%02x(V0)", "JUMP", code[0] & 0xf, code[1]); break;
+        case 0xb: printf("%-10s $%01x%02x(V0)", "JUMP\n", code[0] & 0xf, code[1]); break;
 
         //CXNN: Set VX to random number with mask NN 
-        case 0xc: printf("%-10s V%01X,#$%02x", "RNDMSK", code[0] & 0xf, code[1]); break;
+        case 0xc: printf("%-10s V%01X,#$%02x", "RNDMSK\n", code[0] & 0xf, code[1]); break;
 
         //DXYN: Draw sprite at (VX, VY) with N bytes of data starting at address stored in I  
-        case 0xd: printf("%-10s V%01X,V%01X,#$%01x", "SPRITE", code[0] & 0xf, code[1] >> 4, code[1]&0xf); break; 
+        case 0xd: printf("%-10s V%01X,V%01X,#$%01x", "SPRITE\n", code[0] & 0xf, code[1] >> 4, code[1]&0xf); break; 
 
         case 0xe:
             switch (code[1]) {
                 //EX9E: Skip following instruction if key corresponding to hex value stored in VX is pressed
-                case 0x9e: printf("%-10s V%01X", "SKIPKEY_Y", code[0] & 0xf); break;
+                case 0x9e: printf("%-10s V%01X", "SKIPKEY_Y\n", code[0] & 0xf); break;
 
                 //EXA1: Skip following instruction if key corresponding to hex value stored in VX isn't pressed  
-                case 0xa1: printf("%-10s V%01X", "SKIPKEY_N", code[0] & 0xf); break;
+                case 0xa1: printf("%-10s V%01X", "SKIPKEY_N\n", code[0] & 0xf); break;
 
-                default: printf("UNKNOWN E"); break;
+                default: printf("UNKNOWN E\n"); break;
             }
             break;
         
         case 0xf:
             switch (code[1]) {
                 //FX07: Store value of delay timer in VX
-                case 0x07: printf("%-10s V%01X,DELAY", "MOV", code[0] & 0xf); break;
+                case 0x07: printf("%-10s V%01X,DELAY", "MOV\n", code[0] & 0xf); break;
                 
                 //FX0A: Wait for keypress and store result in VX
-                case 0x0a: printf("%-10s V%01X", "KEY", code[0] & 0xf); break;
+                case 0x0a: printf("%-10s V%01X", "KEY\n", code[0] & 0xf); break;
 
                 //FX15: Set delay timer to value of VX
-                case 0x15: printf("%-10s DELAY,V%01X", "MOV", code[0] & 0xf); break;
+                case 0x15: printf("%-10s DELAY,V%01X", "MOV\n", code[0] & 0xf); break;
 
                 //FX18: Set sound timer to value of VX
-                case 0x18: printf("%-10s SOUND,V%01X", "MOV", code[0] & 0xf); break;
+                case 0x18: printf("%-10s SOUND,V%01X", "MOV\n", code[0] & 0xf); break;
 
                 //FX1E: Add value of VX to I  
-                case 0x1e: printf("%-10s I,V%01X", "ADI", code[0] & 0xf); break;
+                case 0x1e: printf("%-10s I,V%01X", "ADI\n", code[0] & 0xf); break;
 
                 //FX29: Set I to memory address of sprite data corresponding to hex digit stored in VX
-                case 0x29: printf("%-10s I,V%01X", "SPRITECHAR", code[0] & 0xf); break;
+                case 0x29: printf("%-10s I,V%01X", "SPRITECHAR\n", code[0] & 0xf); break;
 
                 //FX33: Store binary-coded decimal equivalent of value of VX at addresses I, I + 1, and I + 2
-                case 0x33: printf("%-10s (I),V%01X", "MOVBCD", code[0] & 0xf); break;
+                case 0x33: printf("%-10s (I),V%01X", "MOVBCD\n", code[0] & 0xf); break;
 
                 //FX55: Store values of V0 to VX inclusive in memory starting at address I, then set I to I + X + 1
-                case 0x55: printf("%-10s (I),V0-V%01X", "MOVM", code[0] & 0xf); break;
+                case 0x55: printf("%-10s (I),V0-V%01X", "MOVM\n", code[0] & 0xf); break;
 
                 //FX65: Fill V0 to VX inclusive with values stored in memory starting at address I, then set I to I + X + 1
-                case 0x65: printf("%-10s V0-V%01X,(I)", "MOVM", code[0] & 0xf); break;
+                case 0x65: printf("%-10s V0-V%01X,(I)", "MOVM\n", code[0] & 0xf); break;
 
-                default: printf("UNKNOWN F"); break;
+                default: printf("UNKNOWN F\n"); break;
             }
             break;
     }
@@ -187,7 +187,6 @@ void op1NNN(CHIP8State *state, uint8_t *code) {
     if (target == (state -> pc)) {
         state -> halt = 1;
         printf("Set a halt flag as an infinite loop was detected.\n");
-
     }
 
     state -> pc = target;
@@ -567,6 +566,7 @@ void emulateCHIP8(CHIP8State *state) {
                 case 0xe: op8XYE(state, code); break;
                 default: unimplementedInstruction(state); break;
             }
+            break;
         case 0x09: op9XY0(state, code); break;
         
         case 0x0a: opANNN(state, code); break;
@@ -578,7 +578,20 @@ void emulateCHIP8(CHIP8State *state) {
                 case 0x9e: opEX9E(state, code); break;
                 case 0xa1: opEXA1(state, code); break;
                 default: unimplementedInstruction(state); break;
-            } 
-        case 0x0f: unimplementedInstruction(state); break;
+            }
+            break; 
+        case 0x0f:
+            switch (code[1]) {
+                case 0x07: opFX07(state, code); break;
+                case 0x0a: opFX0A(state, code); break;
+                case 0x15: opFX15(state, code); break;
+                case 0x18: opFX18(state, code); break;
+                case 0x1e: opFX1E(state, code); break;
+                case 0x29: opFX29(state, code); break;
+                case 0x33: opFX33(state, code); break;
+                case 0x55: opFX55(state, code); break;
+                case 0x65: opFX65(state, code); break;
+            }
+            break;
     }
 }
