@@ -72,7 +72,7 @@ void decodeCHIP8(uint8_t *buffer, int pc) {
         case 0x6: printf("%-10s V%01X,#$%02x", "MVI\n", code[0] & 0xf, code[1]); break;            //6XNN: Store NN in VX
         case 0x7: printf("%-10s V%01X,#$%02x", "ADI\n", code[0] & 0xf, code[1]); break;            //7XNN: Add NN to VX
         case 0x8:
-            uint8_t fourthNibble = code[1] >> 4;
+            uint8_t fourthNibble = code[1] & 0xf;
             switch (fourthNibble) {
                 case 0: printf("%-10s V%01X,V%01X", "MOV\n", code[0] & 0xf, code[1] >> 4); break;   //8XY0: Store value of VY in VX
                 case 1: printf("%-10s V%01X,V%01X", "OR\n", code[0] & 0xf, code[1] >> 4); break;    //8XY1: Set VX to (VX OR VY)
