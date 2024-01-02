@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
     }
 
     //Start the CHIP-8 interpreter machine and load the program
-    CHIP8Machine *machine = initMachine();
+    CHIP8State *machine = initCHIP8();
     char *filename = argv[1];
     printf("Loading program %s...\n", filename);
     if (openROM(machine, filename) != 0) {
@@ -121,83 +121,83 @@ int main(int argc, char **argv) {
                 //Modern CHIP-8 emulators typically use 1234, QWER, ASDF, ZXCV to replace original keypad
                 if (e.type == SDL_KEYDOWN) {
                     switch (e.key.keysym.sym) {
-                        case SDLK_1: keyDown(machine -> state, 1);
-                        case SDLK_2: keyDown(machine -> state, 2);
-                        case SDLK_3: keyDown(machine -> state, 3);
-                        case SDLK_4: keyDown(machine -> state, 0xc);
+                        case SDLK_1: keyDown(machine, 1);
+                        case SDLK_2: keyDown(machine, 2);
+                        case SDLK_3: keyDown(machine, 3);
+                        case SDLK_4: keyDown(machine, 0xc);
 
-                        case SDLK_q: keyDown(machine -> state, 4);
-                        case SDLK_w: keyDown(machine -> state, 5);
-                        case SDLK_e: keyDown(machine -> state, 6);
-                        case SDLK_r: keyDown(machine -> state, 0xd);
+                        case SDLK_q: keyDown(machine, 4);
+                        case SDLK_w: keyDown(machine, 5);
+                        case SDLK_e: keyDown(machine, 6);
+                        case SDLK_r: keyDown(machine, 0xd);
                         
-                        case SDLK_a: keyDown(machine -> state, 7);
-                        case SDLK_s: keyDown(machine -> state, 8);
-                        case SDLK_d: keyDown(machine -> state, 9);
-                        case SDLK_f: keyDown(machine -> state, 0xe);
+                        case SDLK_a: keyDown(machine, 7);
+                        case SDLK_s: keyDown(machine, 8);
+                        case SDLK_d: keyDown(machine, 9);
+                        case SDLK_f: keyDown(machine, 0xe);
 
-                        case SDLK_z: keyDown(machine -> state, 0xa);
-                        case SDLK_x: keyDown(machine -> state, 0);
-                        case SDLK_c: keyDown(machine -> state, 0xb);
-                        case SDLK_v: keyDown(machine -> state, 0xf);
+                        case SDLK_z: keyDown(machine, 0xa);
+                        case SDLK_x: keyDown(machine, 0);
+                        case SDLK_c: keyDown(machine, 0xb);
+                        case SDLK_v: keyDown(machine, 0xf);
                     }
                 }
                 else if (e.type == SDL_KEYUP) {
                     switch (e.key.keysym.sym) {
-                        case SDLK_1: keyUp(machine -> state, 1);
-                        case SDLK_2: keyUp(machine -> state, 2);
-                        case SDLK_3: keyUp(machine -> state, 3);
-                        case SDLK_4: keyUp(machine -> state, 0xc);
+                        case SDLK_1: keyUp(machine, 1);
+                        case SDLK_2: keyUp(machine, 2);
+                        case SDLK_3: keyUp(machine, 3);
+                        case SDLK_4: keyUp(machine, 0xc);
 
-                        case SDLK_q: keyUp(machine -> state, 4);
-                        case SDLK_w: keyUp(machine -> state, 5);
-                        case SDLK_e: keyUp(machine -> state, 6);
-                        case SDLK_r: keyUp(machine -> state, 0xd);
+                        case SDLK_q: keyUp(machine, 4);
+                        case SDLK_w: keyUp(machine, 5);
+                        case SDLK_e: keyUp(machine, 6);
+                        case SDLK_r: keyUp(machine, 0xd);
                         
-                        case SDLK_a: keyUp(machine -> state, 7);
-                        case SDLK_s: keyUp(machine -> state, 8);
-                        case SDLK_d: keyUp(machine -> state, 9);
-                        case SDLK_f: keyUp(machine -> state, 0xe);
+                        case SDLK_a: keyUp(machine, 7);
+                        case SDLK_s: keyUp(machine, 8);
+                        case SDLK_d: keyUp(machine, 9);
+                        case SDLK_f: keyUp(machine, 0xe);
 
-                        case SDLK_z: keyUp(machine -> state, 0xa);
-                        case SDLK_x: keyUp(machine -> state, 0);
-                        case SDLK_c: keyUp(machine -> state, 0xb);
-                        case SDLK_v: keyUp(machine -> state, 0xf);
+                        case SDLK_z: keyUp(machine, 0xa);
+                        case SDLK_x: keyUp(machine, 0);
+                        case SDLK_c: keyUp(machine, 0xb);
+                        case SDLK_v: keyUp(machine, 0xf);
                     }
                 }
             }
 
-            //Execute CHIP-8 instructions
-            //CHIP-8 updates the display at 60Hz, so need to time that here as well
+            //CHIP-8 updates the display at 60Hz, 1/60 = 16.667ms = 16667us
             currentTick = SDL_GetPerformanceCounter();
             elapsedTicks = (double) (currentTick - lastTick);
             delta = (double) ((double) (elapsedTicks * 1000.0) / (double) SDL_GetPerformanceFrequency());
             lastTick = currentTick;
             timer += delta;
 
-            //If CHIP-8 is waiting, then don't do anything
-            if (!(machine -> state -> halt)) {
-                if (timer > 1000 / INSTRUCTION_FREQUENCY) {
-                    executeInstruction(machine);
+            if (timer > 1000 / INSTRUCTION_FREQUENCY) {
+                //If CHIP-8 is waiting, then don't do anything and return out, otherwise execute an instruction
+                if (!(machine -> halt)) {
+                    emulateCHIP8(machine);
                 }
             }
-
-            //executeCPU(machine);
 
             if (timer > 1000 / SCREEN_FPS) {
                 timer = 0.0;
 
-                if (machine -> state -> delay > 0) {
-                    machine -> state -> delay -= 1;
+                if (machine -> delay > 0) {
+                    machine -> delay -= 1;
                 }
 
-                if (machine -> state -> sound > 0) {
-                    machine -> state -> sound -= 1;
+                if (machine -> sound > 0) {
+                    machine -> sound -= 1;
                 }  
 
                 //Update pixel array and load it into the texture
-
-                //printState(machine -> state);
+                //Only update the pixel array if display flag is set to 1
+                if (machine -> displayFlag) {
+                    printState(machine);
+                    machine -> displayFlag = 0;
+                }
             } 
 
             //Clear the screen, (update the texture), then update the screen
@@ -208,7 +208,7 @@ int main(int argc, char **argv) {
     }
 
     //Free resources and close SDL
-    freeMachine(machine);
+    freeCHIP8(machine);
     closeSDL();
 
     return 0;

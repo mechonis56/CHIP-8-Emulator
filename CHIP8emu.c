@@ -170,7 +170,8 @@ void unimplementedInstruction(CHIP8State *state) {
 void op00E0(CHIP8State *state, uint8_t *code) {
     //CLS
     //Copies 0 into display (64x32) bytes; 1 bit per pixel, 8 bits in a byte = 256 bytes
-    memset(state -> screen, 0, (64 * 32) / 8);   
+    memset(state -> screen, 0, (64 * 32) / 8);
+    state -> displayFlag = 1;   
 }
 
 void op00EE(CHIP8State *state, uint8_t *code) {
@@ -415,6 +416,7 @@ void opDXYN(CHIP8State *state, uint8_t *code) {
             spriteBit--;    
         }
     }
+    state -> displayFlag = 1;
 }
 
 void opEX9E(CHIP8State *state, uint8_t *code) {

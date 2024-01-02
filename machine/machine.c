@@ -3,29 +3,7 @@
 #include <stdbool.h>
 #include "machine.h"
 
-CHIP8Machine* initMachine() {
-    CHIP8State *s = initCHIP8();
-
-    CHIP8Machine *m = calloc(sizeof(CHIP8Machine), 1);
-    m -> state = s;
-    m -> lastTick = 0.0;
-    m -> lastTimer = 0.0;
-    //m -> emulatorTimer = malloc(sizeof(time_t));
-
-    printf("Initialised CHIP-8 machine.\n");
-    return m;    
-}
-
-void memcpyMachine(CHIP8Machine *machine, size_t start, void *src, size_t len) {
-    if (start + len > 4096) {
-        printf("Error: Memory copy out of bounds.\n");
-        return;
-    }
-
-    memcpy(&(machine -> state -> memory[start]), src, len);
-}
-
-int openROM(CHIP8Machine *machine, char *filename) {
+int openROM(CHIP8State *state, char *filename) {
     FILE *f = fopen(filename, "rb");
     if (f == NULL) {
         printf("Error: Couldn't open %s\n", filename);
@@ -56,82 +34,16 @@ int openROM(CHIP8Machine *machine, char *filename) {
     fclose(f);
     
     //Copy buffer into memory at 0x200, then free it as it's no longer needed
-    memcpyMachine(machine, 0x200, buffer, fsize);
+    memcpy(&(state -> memory[0x200]), buffer, fsize);
     free(buffer);
 
     return 0;
-}
-
-void freeMachine(CHIP8Machine *machine) {
-    printf("Freeing CHIP8Machine...\n");
-    if (machine -> state != NULL) {
-        printf("Freeing CHIP8State...\n");
-        freeCHIP8(machine -> state);
-    }
-
-    if (machine != NULL) {
-        free(machine);
-    }
 }
 
 double timeInMicroseconds() {
     clock_t time = clock();
     double microtime = (double) (time * 1000000) / CLOCKS_PER_SEC;
     return microtime;
-}
-
-void handleTimers(CHIP8Machine *machine, double currentTime) {
-    //CHIP-8 updates the display at 60Hz, 1/60 = 16.667ms = 16667us
-    bool tick = false;
-    if ((currentTime - (machine -> lastTick)) > 16667.0) {
-        tick = true;
-    }
-    //Timers are decremented at this frequency, as long as their values remain above 0
-    if (tick && (machine -> state -> delay) > 0) {
-        machine -> state -> delay -= 1;
-    }
-    if (tick && (machine -> state -> sound) > 0) {
-        machine -> state -> sound -= 1;
-    }
-
-    machine -> lastTick = currentTime;
-}
-
-void executeCPU(CHIP8Machine *machine) {
-    double currentTime = timeInMicroseconds();
-    if (machine -> lastTick == 0.0) {
-        machine -> lastTick = currentTime;
-    }
-
-    //If CHIP-8 is waiting, then don't do anything and return out
-    if (machine -> state -> halt) {
-        return;
-    }
-
-    //See if there's been a tick (i.e. has 16667us passed) and adjust machine timers accordingly
-    handleTimers(machine, currentTime);
-
-    //Can pick any number of instructions per second, went with 700 as recommended
-    int instructionsPerSecond = 700;
-    double elapsedTime = (currentTime - (machine -> lastTimer)) / 1000000;
-    int cyclesRemaining = (int) instructionsPerSecond * elapsedTime;
-    int cycles = 0;
-
-    while (cycles < cyclesRemaining) {
-        if (!(machine -> state -> halt)) {
-            emulateCHIP8(machine -> state);
-        }
-        cycles += 1;
-    }
-    
-    machine -> lastTimer = currentTime;
-}
-
-void executeInstruction(CHIP8Machine *machine) {
-    //If CHIP-8 is waiting, then don't do anything and return out
-    if (!(machine -> state -> halt)) {
-        emulateCHIP8(machine -> state);
-    }
 }
 
 void keyDown(CHIP8State *state, uint8_t key) {
