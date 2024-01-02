@@ -3,11 +3,11 @@
 #include <SDL2/SDL.h>
 #include "machine/machine.h"
 
-//Window dimension constants
+//Window dimensions and frequency constants
 const int SCREEN_WIDTH = 64;
 const int SCREEN_HEIGHT = 32;
 const int SCREEN_FPS = 60;
-const int SCREEN_TICKS_PER_FRAME = (int) 1000 / SCREEN_FPS;
+const int INSTRUCTION_FREQUENCY = 60;
 
 //Start up SDL and create a window
 bool initSDL();
@@ -58,49 +58,12 @@ bool initSDL() {
     return success;
 }
 
-void updateDisplay(CHIP8Machine *machine, uint8_t *pixelbuffer) {
-    //Take the 1-bit bitmap from CHIP-8 and convert into 8-bit so that SDL can load it as a surface
-    uint8_t *framebuffer = machine -> state -> memory;
-    
-    for (int i = 0; i < (64 / 8) * 32; i++) {
-        uint8_t pixel = framebuffer[0];
-
-        if (pixel & 0x80) pixelbuffer[0] = 0xff; else pixelbuffer[0] = 0;
-        if (pixel & 0x40) pixelbuffer[1] = 0xff; else pixelbuffer[1] = 0;
-        if (pixel & 0x20) pixelbuffer[2] = 0xff; else pixelbuffer[2] = 0;
-        if (pixel & 0x10) pixelbuffer[3] = 0xff; else pixelbuffer[3] = 0;
-        if (pixel & 0x08) pixelbuffer[4] = 0xff; else pixelbuffer[4] = 0;
-        if (pixel & 0x04) pixelbuffer[5] = 0xff; else pixelbuffer[5] = 0;
-        if (pixel & 0x02) pixelbuffer[6] = 0xff; else pixelbuffer[6] = 0;
-        if (pixel & 0x01) pixelbuffer[7] = 0xff; else pixelbuffer[7] = 0;
-
-        pixelbuffer += 8;
-        framebuffer++;
-    }
-}
-
-SDL_Texture* loadTexture(uint8_t *pixelbuffer) {
-    SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(pixelbuffer, 64, 32, 8, 64 * 8, 0, 0, 0, 0);
-    SDL_Texture *texture = NULL;
-
-    if (surface == NULL) {
-        printf("Unable to load surface. SDL Error: %s\n", SDL_GetError());
-    }
-    else {
-        texture = SDL_CreateTextureFromSurface(gRenderer, surface);
-        if (texture == NULL) {
-            printf("Unable to create texture from display surface. SDL Error: %s\n", SDL_GetError());
-        }
-        SDL_FreeSurface(surface);
-    }
-
-    return texture;
-}
-
 void closeSDL() {
     //Deallocate loaded image
-    SDL_DestroyTexture(texture);
-    texture = NULL;
+    if (texture != NULL) {
+        SDL_DestroyTexture(texture);
+        texture = NULL;
+    }
 
     //Destroy window
     SDL_DestroyRenderer(gRenderer);
@@ -126,14 +89,12 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    //Create pixel array
-    uint8_t *pixelbuffer = calloc(64 * 32, 1);
-
+    //Set up timers for updating the display at 60Hz
     uint64_t currentTick = SDL_GetPerformanceCounter();
     uint64_t lastTick = 0;
     double elapsedTicks = 0;
-    double delta = 0;
-    double drawTimer = 0.0;
+    double delta = 0.0;
+    double timer = 0.0;
 
     //Start up SDL and create a window
     if (!initSDL()) {
@@ -208,33 +169,45 @@ int main(int argc, char **argv) {
 
             //Execute CHIP-8 instructions
             //CHIP-8 updates the display at 60Hz, so need to time that here as well
-            executeCPU(machine);
-
             currentTick = SDL_GetPerformanceCounter();
             elapsedTicks = (double) (currentTick - lastTick);
             delta = (double) ((double) (elapsedTicks * 1000.0) / (double) SDL_GetPerformanceFrequency());
             lastTick = currentTick;
-            drawTimer += delta;
-            
-            if (drawTimer > (double) 1000 / SCREEN_FPS) {
-                drawTimer = 0.0;
-                //Load pixel array into a texture then render texture to screen
-                updateDisplay(machine, pixelbuffer);
-                if (!loadTexture(pixelbuffer)) {
-                    printf("Failed to load display.\n");
-                }
-                else {
-                    //Clear screen, copy texture to the screen and update it
-                    SDL_RenderClear(gRenderer);
-                    SDL_RenderCopy(gRenderer, texture, NULL, NULL);
-                    SDL_RenderPresent(gRenderer);
+            timer += delta;
+
+            //If CHIP-8 is waiting, then don't do anything
+            if (!(machine -> state -> halt)) {
+                if (timer > 1000 / INSTRUCTION_FREQUENCY) {
+                    executeInstruction(machine);
                 }
             }
+
+            //executeCPU(machine);
+
+            if (timer > 1000 / SCREEN_FPS) {
+                timer = 0.0;
+
+                if (machine -> state -> delay > 0) {
+                    machine -> state -> delay -= 1;
+                }
+
+                if (machine -> state -> sound > 0) {
+                    machine -> state -> sound -= 1;
+                }  
+
+                //Update pixel array and load it into the texture
+
+                //printState(machine -> state);
+            } 
+
+            //Clear the screen, (update the texture), then update the screen
+            SDL_RenderClear(gRenderer);
+            SDL_RenderCopy(gRenderer, texture, NULL, NULL);
+            SDL_RenderPresent(gRenderer);
         }
     }
 
     //Free resources and close SDL
-    free(pixelbuffer);
     freeMachine(machine);
     closeSDL();
 

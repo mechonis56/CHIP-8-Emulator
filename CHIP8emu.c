@@ -369,7 +369,7 @@ void opCXNN(CHIP8State *state, uint8_t *code) {
 void opDXYN(CHIP8State *state, uint8_t *code) {
     //SPRITE
     uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf) >> 1;
+    uint8_t regY = (code[1] & 0xf) >> 4;
 
     //Set X and Y coordinates to values of VX and VY respectively, and VF to 0
     //Go through N rows and draw the 8 pixels in the row, stop entirely if you reach the bottom of the screen

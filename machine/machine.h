@@ -18,6 +18,9 @@ void freeMachine(CHIP8Machine *machine);
 double timeInMicroseconds();
 void handleTimers(CHIP8Machine *machine, double currentTime);
 void executeCPU(CHIP8Machine *machine);
+void executeInstruction(CHIP8Machine *machine);
 
 void keyDown(CHIP8State *state, uint8_t key);
 void keyUp(CHIP8State *state, uint8_t key);
+
+void printState(CHIP8State *state);

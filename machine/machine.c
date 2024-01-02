@@ -127,6 +127,13 @@ void executeCPU(CHIP8Machine *machine) {
     machine -> lastTimer = currentTime;
 }
 
+void executeInstruction(CHIP8Machine *machine) {
+    //If CHIP-8 is waiting, then don't do anything and return out
+    if (!(machine -> state -> halt)) {
+        emulateCHIP8(machine -> state);
+    }
+}
+
 void keyDown(CHIP8State *state, uint8_t key) {
     switch (key) {
         case 0: state -> keyState[0] = 1; break;
@@ -172,5 +179,25 @@ void keyUp(CHIP8State *state, uint8_t key) {
         case 0xf: state -> keyState[0xF] = 0; break;
         
         default: return;
+    }
+}
+
+void printState(CHIP8State *state) {
+    //Print value in each register
+    for (int i = 0; i < 16; i++) {
+        printf("V%01X = %02x\n", i, state -> V[i]);
+    }
+    //Print whether timers are on or off
+    if (state -> delay) {
+        printf("DELAY = ON\n");
+    }
+    else {
+        printf("DELAY = OFF\n");
+    }
+    if (state -> sound) {
+        printf("SOUND = ON\n");
+    }
+    else {
+        printf("SOUND = OFF\n");
     }
 }
