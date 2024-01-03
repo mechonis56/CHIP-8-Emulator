@@ -372,49 +372,36 @@ void opDXYN(CHIP8State *state, uint8_t *code) {
     uint8_t regX = code[0] & 0xf;
     uint8_t regY = (code[1] & 0xf) >> 4;
 
-    //Set X and Y coordinates to values of VX and VY respectively, and VF to 0
+    //Set X and Y coordinates to values of VX & 63 and VY & 31 respectively, and VF to 0
     //Go through N rows and draw the 8 pixels in the row, stop entirely if you reach the bottom of the screen
-    uint8_t x = state -> V[regX];
-    uint8_t y = state -> V[regY];
+    uint8_t x = (state -> V[regX]) & 0x3f;
+    uint8_t y = (state -> V[regY]) & 0x1f;
     state -> V[0xF] = 0;
     int rows = code[1] & 0xf;
 
     for (int i = 0; i < rows; i++) {
         uint8_t *sprite = &(state -> memory[(state -> I) + i]);
-        int spriteBit = 7;
 
         //For each of the 8 pixels/bits in the row, going from left to right i.e. most to least significant bit
-        for (int j = x; j < (x + 8) && j < 64; j++) {
-            uint8_t byteInRow = j / 8;
-            uint8_t bitInByte = j % 8;
-            uint8_t srcBit = (*sprite >> spriteBit) & 0x1;
+        //0x80 = 0b10000000 i.e. the most significant bit, so below statement will be iterated for each bit
+        for (int j = 0; j < 8; j++) {
+            uint8_t spritePixel = *sprite & (0x80 >> j);
 
-            if (srcBit) {
-                uint8_t *destBytePointer = &(state -> screen[(i + y) * (64 / 8) + byteInRow]);
-                uint8_t destByte = *destBytePointer;
-                //0x80 = 0b10000000
-                uint8_t destMask = (0x80 >> bitInByte); 
-                uint8_t destBit = destByte && destMask;
-
-                //srcBit is now either 0 or 1
-                srcBit = srcBit << (7 - bitInByte); 
-
-                //If current pixel = on and pixel at (X,Y) is also on, turn off pixel and set VF to 1
-                //Otherwise, draw if current pixel = on and pixel at (X,Y) is off
-                //This is an XOR
-                if (srcBit && destBit) {
+            //If current 1-bit sprite pixel = on and 8-bit screen pixel at (X,Y) = on, turn off screen pixel and set VF to 1
+            //Otherwise, draw if current pixel = on and pixel at (X,Y) = off
+            //This is an XOR operation
+            if (spritePixel) {
+                uint8_t *screenPixel = &(state -> screen[(y + i) * 64 + (x + j)]);
+                if (*screenPixel) {
                     state -> V[0xF] = 1;
-                }
-
-                destBit ^= srcBit;
-                //~ flips bits, so below line essentially reverses the mask
-                destByte = (destByte & ~destMask) | destBit;    
-                *destBytePointer = destByte;
+                } 
+                *screenPixel ^= 0xff;  
             }
 
-            //For the next significant bit
-            spriteBit--;    
+            x++;
         }
+
+        y++;
     }
     state -> displayFlag = 1;
 }
