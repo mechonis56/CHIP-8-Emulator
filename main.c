@@ -17,8 +17,9 @@ SDL_Window *gWindow = NULL;
 SDL_Renderer *gRenderer = NULL;
 
 //Load pixel array as a texture to be displayed
-//SDL_Texture* loadTexture();
-SDL_Texture *texture = NULL;
+void updatePixels(CHIP8State *state, uint32_t *framebuffer);
+SDL_Texture* loadTexture(uint32_t *framebuffer);
+SDL_Texture *gTexture = NULL;
 
 //Free resources and shut down SDL
 void closeSDL();
@@ -58,11 +59,30 @@ bool initSDL() {
     return success;
 }
 
+void updatePixels(CHIP8State *state, uint32_t *framebuffer) {
+    //Need to convert 8-bit pixels into 32-bit ARGB colour format
+    //0x00FFFFFF = white, so multiply CHIP-8 pixel value (0 or 1) by this, then set opacity to max
+    for (int i = 0; i < (SCREEN_WIDTH * SCREEN_HEIGHT); i++) {
+        uint8_t screenPixel = state -> screen[i];
+        framebuffer[i] = (0x00FFFFFF * screenPixel) | 0xFF000000;
+    }
+}
+
+SDL_Texture* loadTexture(uint32_t *framebuffer) {
+    gTexture = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    if (gTexture == NULL) {
+        printf("Texture could not be created. SDL Error: %s\n", SDL_GetError());
+    }
+    
+    return gTexture;
+}
+
 void closeSDL() {
     //Deallocate loaded image
-    if (texture != NULL) {
-        SDL_DestroyTexture(texture);
-        texture = NULL;
+    if (gTexture != NULL) {
+        SDL_DestroyTexture(gTexture);
+        gTexture = NULL;
     }
 
     //Destroy window
@@ -95,6 +115,11 @@ int main(int argc, char **argv) {
     double elapsedTicks = 0;
     double delta = 0.0;
     double timer = 0.0;
+
+    //Create a 32-bit pixel array from CHIP-8 screen to load into the texture
+    //SDL_PIXELFORMAT_RGBA8888, the easiest format to understand, is 32-bit
+    //Tried SDL_PIXELFORMAT_INDEX8 first but couldn't understand how to get it to work
+    uint32_t *framebuffer = calloc(SCREEN_WIDTH * SCREEN_HEIGHT, sizeof(uint32_t));
 
     //Start up SDL and create a window
     if (!initSDL()) {
@@ -192,18 +217,21 @@ int main(int argc, char **argv) {
                     machine -> sound -= 1;
                 }  
 
-                //Update pixel array and load it into the texture
+                //Update pixel array and load it into the texture, but only if the display flag is on
                 //Only update the pixel array if display flag is set to 1
                 if (machine -> displayFlag) {
-                    printState(machine);
+                    //printState(machine);
+                    updatePixels(machine, framebuffer);
+                    loadTexture(framebuffer);
+
+                    //Pitch = no. of bytes in a row of pixels
+                    SDL_RenderClear(gRenderer);
+                    SDL_UpdateTexture(gTexture, NULL, framebuffer, SCREEN_WIDTH * sizeof(uint32_t));
+                    SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
+                    SDL_RenderPresent(gRenderer);
                     machine -> displayFlag = 0;
                 }
             } 
-
-            //Clear the screen, (update the texture), then update the screen
-            SDL_RenderClear(gRenderer);
-            SDL_RenderCopy(gRenderer, texture, NULL, NULL);
-            SDL_RenderPresent(gRenderer);
         }
     }
 
