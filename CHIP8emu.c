@@ -25,17 +25,17 @@ CHIP8State* initCHIP8(void) {
 
 void freeCHIP8(CHIP8State *state) {
     if (state -> screen != NULL) {
-        printf("Freeing CHIP8State screen...\n");
+        //printf("Freeing CHIP8State screen...\n");
         free(state -> screen);
     }
     
     if (state -> memory != NULL) {
-        printf("Freeing CHIP8State memory...\n");
+        //printf("Freeing CHIP8State memory...\n");
         free(state -> memory);
     }
 
     if (state != NULL) {
-        printf("Freeing CHIP8State...\n");
+        //printf("Freeing CHIP8State...\n");
         free(state);
     }
 }
@@ -371,7 +371,7 @@ void opCXNN(CHIP8State *state, uint8_t *code) {
 void opDXYN(CHIP8State *state, uint8_t *code) {
     //SPRITE
     uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf) >> 4;
+    uint8_t regY = (code[1] & 0xf0) >> 4;
 
     //Set X and Y coordinates to values of VX & 63 and VY & 31 respectively, and VF to 0
     //Go through N rows and draw the 8 pixels in the row, stop entirely if you reach the bottom of the screen

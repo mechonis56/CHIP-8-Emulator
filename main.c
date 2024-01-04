@@ -58,7 +58,7 @@ bool initSDL() {
         }
     }
 
-    printf("SDL successfully initialised.\n");
+    //printf("SDL successfully initialised.\n");
     return success;
 }
 
@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
     //Start the CHIP-8 interpreter machine and load the program
     CHIP8State *machine = initCHIP8();
     char *filename = argv[1];
-    printf("Loading program %s...\n", filename);
+    //printf("Loading program %s...\n", filename);
     if (openROM(machine, filename) != 0) {
         return 1;
     }
@@ -236,6 +236,7 @@ int main(int argc, char **argv) {
         }
     }
 
+    //printState(machine);
     //Free resources and close SDL
     freeCHIP8(machine);
     closeSDL();
