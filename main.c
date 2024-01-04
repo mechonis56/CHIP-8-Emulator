@@ -6,8 +6,8 @@
 //Window, CHIP-8 dimensions and frequency constants
 const int SCREEN_WIDTH = 64;
 const int SCREEN_HEIGHT = 32;
-const int WINDOW_WIDTH = 640;
-const int WINDOW_HEIGHT = 320;
+const int WINDOW_WIDTH = 1280;
+const int WINDOW_HEIGHT = 640;
 const int SCREEN_FPS = 60;
 const int INSTRUCTION_FREQUENCY = 700;
 
@@ -52,7 +52,7 @@ bool initSDL() {
             }
             else {
                 //Upscale resolution and use nearest pixel sampling to prevent blurring of pixels
-                SDL_RenderSetLogicalSize(gRenderer, WINDOW_WIDTH, WINDOW_HEIGHT);
+                SDL_RenderSetLogicalSize(gRenderer, SCREEN_WIDTH, SCREEN_HEIGHT);
                 SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
             }
         }
