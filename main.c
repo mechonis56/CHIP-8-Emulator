@@ -83,10 +83,8 @@ SDL_Texture* loadTexture(uint32_t *framebuffer) {
 
 void closeSDL() {
     //Deallocate loaded image
-    if (gTexture != NULL) {
-        SDL_DestroyTexture(gTexture);
-        gTexture = NULL;
-    }
+    SDL_DestroyTexture(gTexture);
+    gTexture = NULL;
 
     //Destroy window
     SDL_DestroyRenderer(gRenderer);

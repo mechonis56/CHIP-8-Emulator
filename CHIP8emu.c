@@ -14,7 +14,8 @@ CHIP8State* initCHIP8(void) {
     s -> pc = 0x200;
     s -> sp = 0xfa0;
     s -> memory = calloc(4 * 1024, 1);                      //4KB = 4 * 1024 = 4096 bytes
-    s -> screen = &s -> memory[0xf00];                      //Display buffer at 0xF00
+    //s -> screen = &s -> memory[0xf00];                      //Display buffer at 0xF00
+    s -> screen = calloc(64 * 32, 1);
 
     memcpy(&(s -> memory[FONT_BASE]), font4x5, FONT_SIZE);   //Put font in first 512 bytes of memory
 
@@ -23,14 +24,14 @@ CHIP8State* initCHIP8(void) {
 }
 
 void freeCHIP8(CHIP8State *state) {
-    if (state -> memory != NULL) {
-        printf("Freeing CHIP8State memory...\n");
-        free(state -> memory);
-    }
-    
     if (state -> screen != NULL) {
         printf("Freeing CHIP8State screen...\n");
         free(state -> screen);
+    }
+    
+    if (state -> memory != NULL) {
+        printf("Freeing CHIP8State memory...\n");
+        free(state -> memory);
     }
 
     if (state != NULL) {
@@ -398,10 +399,10 @@ void opDXYN(CHIP8State *state, uint8_t *code) {
                 *screenPixel ^= 0xff;  
             }
 
-            x++;
+            //x++;
         }
 
-        y++;
+        //y++;
     }
     state -> displayFlag = 1;
 }
@@ -522,7 +523,7 @@ void opFX65(CHIP8State *state, uint8_t *code) {
 void emulateCHIP8(CHIP8State *state) {
     //Fetch and decode instruction, also it's best to increment program counter here
     uint8_t *code = &(state -> memory[state -> pc]);
-    decodeCHIP8(state -> memory, state -> pc);
+    //decodeCHIP8(state -> memory, state -> pc);
     state -> pc += 2;
 
     uint8_t firstNibble = (*code & 0xf0) >> 4;

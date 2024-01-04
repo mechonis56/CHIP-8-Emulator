@@ -5,7 +5,7 @@ SOURCES = CHIP8emu.c CHIP8emu.h font4x5.c font4x5.h machine/machine.c machine/ma
 EXE = emulator
 
 # Compilation flags
-CFLAGS = -Wall -g
+CFLAGS = -Wall -g -ggdb
 
 # Linking flags
 LDFLAGS = -I sdl/include -L sdl/lib 
