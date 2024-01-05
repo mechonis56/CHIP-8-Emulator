@@ -197,8 +197,8 @@ void op1NNN(CHIP8State *state, uint8_t *code) {
 void op2NNN(CHIP8State *state, uint8_t *code) {
     //CALL
     state -> sp -= 2;
-    state -> memory[state -> sp] = (((state -> pc) + 2) & 0xFF00) >> 8;
-    state -> memory[(state -> sp) + 1] = ((state -> pc) + 2) & 0xFF;
+    state -> memory[state -> sp] = ((state -> pc) & 0xFF00) >> 8;
+    state -> memory[(state -> sp) + 1] = (state -> pc) & 0xFF;
     state -> pc = ((code[0] & 0xf) << 8) | code[1]; 
 }
 
@@ -336,7 +336,7 @@ void op8XYE(CHIP8State *state, uint8_t *code) {
 void op9XY0(CHIP8State *state, uint8_t *code) {
     //SKIP_NE VY
     uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf) >> 4;
+    uint8_t regY = (code[1] & 0xf0) >> 4;
 
     if (state -> V[regX] != state -> V[regY]) {
         state -> pc +=2;
