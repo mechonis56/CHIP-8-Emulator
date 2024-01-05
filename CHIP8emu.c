@@ -278,7 +278,7 @@ void op8XY4(CHIP8State *state, uint8_t *code) {
 
     //Registers are 8-bit, not 16-bit so we need to bitmask with 0xff = 0b11111111
     state -> V[regX] = result & 0xff;
-    
+
     //Has carry occured? Bitmask here is 0xff00 = 0b111111100000000
     uint16_t carry = result & 0xff00;
     if (carry) {
@@ -287,27 +287,30 @@ void op8XY4(CHIP8State *state, uint8_t *code) {
     else {
         state -> V[0xF] = 0;
     }
-    
 }
 
 void op8XY5(CHIP8State *state, uint8_t *code) {
     //SUB and set VF
     uint8_t regX = code[0] & 0xf;
     uint8_t regY = (code[1] & 0xf0) >> 4;
-    state -> V[regX] -= state -> V[regY];
 
     //Has borrow occured?
-    uint8_t borrow = (state -> V[regX]) > (state -> V[regY]);
-    state -> V[0xF] = borrow;
+    uint8_t borrow = (state -> V[regY]) > (state -> V[regX]);
+    state -> V[regX] -= state -> V[regY];
+    if (borrow) {
+        state -> V[0xF] = 0;
+    }
+    else {
+        state -> V[0xF] = 1;
+    }
 }
 
 void op8XY6(CHIP8State *state, uint8_t *code) {
     //SHR and set VF to least significant bit
     uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf0) >> 4;
-    state -> V[regX] = (state -> V[regX]) >> 1;
-
     uint8_t lsb = (state -> V[regX]) & 0x1;
+
+    state -> V[regX] = (state -> V[regX]) >> 1;
     state -> V[0xF] = lsb;
 }
 
@@ -315,21 +318,25 @@ void op8XY7(CHIP8State *state, uint8_t *code) {
     //SUBB and set VF
     uint8_t regX = code[0] & 0xf;
     uint8_t regY = (code[1] & 0xf0) >> 4;
-    state -> V[regX] = (state -> V[regY]) - (state -> V[regX]);
 
     //Has borrow occured?
-    uint8_t borrow = (state -> V[regY]) > (state -> V[regX]);
-    state -> V[0xF] = borrow;
+    uint8_t borrow = (state -> V[regX]) > (state -> V[regY]);
+    state -> V[regX] = (state -> V[regY]) - (state -> V[regX]);
+    if (borrow) {
+        state -> V[0xF] = 0;
+    }
+    else {
+        state -> V[0xF] = 1;
+    }
 }
 
 void op8XYE(CHIP8State *state, uint8_t *code) {
     //SHL and set VF to most significant bit
     uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf0) >> 4;
-    state -> V[regX] = (state -> V[regX]) << 1;
 
     //0x80 = 0b10000000
     uint8_t msb = (0x80 == ((state -> V[regX]) & 0x80));
+    state -> V[regX] = (state -> V[regX]) << 1;
     state -> V[0xF] = msb;
 }
 
