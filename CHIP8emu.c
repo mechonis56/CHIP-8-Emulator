@@ -186,7 +186,7 @@ void op1NNN(CHIP8State *state, uint8_t *code) {
     //JUMP
     uint16_t target = ((code[0] & 0xf) << 8) | code[1];
     
-    if (target == (state -> pc)) {
+    if (target == (state -> pc) - 2) {
         state -> halt = 1;
         printf("Set a halt flag as an infinite loop was detected.\n");
     }
@@ -245,35 +245,35 @@ void op7XNN(CHIP8State *state, uint8_t *code) {
 void op8XY0(CHIP8State *state, uint8_t *code) {
     //MOV
     uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf) >> 4;
+    uint8_t regY = (code[1] & 0xf0) >> 4;
     state -> V[regX] = state -> V[regY];
 }
 
 void op8XY1(CHIP8State *state, uint8_t *code) {
     //OR
     uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf) >> 4;
+    uint8_t regY = (code[1] & 0xf0) >> 4;
     state -> V[regX] |= state -> V[regY];
 }
 
 void op8XY2(CHIP8State *state, uint8_t *code) {
     //AND
     uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf) >> 4;
+    uint8_t regY = (code[1] & 0xf0) >> 4;
     state -> V[regX] &= state -> V[regY];
 }
 
 void op8XY3(CHIP8State *state, uint8_t *code) {
     //XOR
     uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf) >> 4;
+    uint8_t regY = (code[1] & 0xf0) >> 4;
     state -> V[regX] ^= state -> V[regY];
 }
 
 void op8XY4(CHIP8State *state, uint8_t *code) {
     //ADD and set VF
     uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf) >> 4;
+    uint8_t regY = (code[1] & 0xf0) >> 4;
     uint16_t result = (state -> V[regX]) + (state -> V[regY]);
 
     //Registers are 8-bit, not 16-bit so we need to bitmask with 0xff = 0b11111111
@@ -293,7 +293,7 @@ void op8XY4(CHIP8State *state, uint8_t *code) {
 void op8XY5(CHIP8State *state, uint8_t *code) {
     //SUB and set VF
     uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf) >> 4;
+    uint8_t regY = (code[1] & 0xf0) >> 4;
     state -> V[regX] -= state -> V[regY];
 
     //Has borrow occured?
@@ -304,7 +304,7 @@ void op8XY5(CHIP8State *state, uint8_t *code) {
 void op8XY6(CHIP8State *state, uint8_t *code) {
     //SHR and set VF to least significant bit
     uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf) >> 4;
+    uint8_t regY = (code[1] & 0xf0) >> 4;
     state -> V[regX] = (state -> V[regX]) >> 1;
 
     uint8_t lsb = (state -> V[regX]) & 0x1;
@@ -314,7 +314,7 @@ void op8XY6(CHIP8State *state, uint8_t *code) {
 void op8XY7(CHIP8State *state, uint8_t *code) {
     //SUBB and set VF
     uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf) >> 4;
+    uint8_t regY = (code[1] & 0xf0) >> 4;
     state -> V[regX] = (state -> V[regY]) - (state -> V[regX]);
 
     //Has borrow occured?
@@ -325,7 +325,7 @@ void op8XY7(CHIP8State *state, uint8_t *code) {
 void op8XYE(CHIP8State *state, uint8_t *code) {
     //SHL and set VF to most significant bit
     uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf) >> 4;
+    uint8_t regY = (code[1] & 0xf0) >> 4;
     state -> V[regX] = (state -> V[regX]) << 1;
 
     //0x80 = 0b10000000
@@ -353,7 +353,7 @@ void opBNNN(CHIP8State *state, uint8_t *code) {
     uint16_t target = ((code[0] & 0xf) << 8) | code[1];
     target += state -> V[0];
     
-    if (target == (state -> pc)) {
+    if (target == (state -> pc) - 2) {
         state -> halt = 1;
         printf("Set a halt flag as an infinite loop was detected.\n");
     }
@@ -488,8 +488,8 @@ void opFX33(CHIP8State *state, uint8_t *code) {
     uint8_t regValue = state -> V[reg];
 
     uint8_t oneDigit = regValue % 10;
-    uint8_t tenDigit = regValue % 100;
-    uint8_t hundredDigit = regValue / 10;
+    uint8_t tenDigit = (regValue / 10) % 10;
+    uint8_t hundredDigit = (regValue / 100) % 10;
 
     state -> memory[state -> I] = hundredDigit;
     state -> memory[(state -> I) + 1] = tenDigit;
