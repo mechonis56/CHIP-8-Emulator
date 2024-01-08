@@ -19,8 +19,8 @@ SDL_Window *gWindow = NULL;
 SDL_Renderer *gRenderer = NULL;
 
 //Load pixel array as a texture to be displayed
+SDL_Texture* loadTexture();
 void updatePixels(CHIP8State *state, uint32_t *framebuffer);
-SDL_Texture* loadTexture(uint32_t *framebuffer);
 SDL_Texture *gTexture = NULL;
 
 //Free resources and shut down SDL
@@ -62,16 +62,7 @@ bool initSDL() {
     return success;
 }
 
-void updatePixels(CHIP8State *state, uint32_t *framebuffer) {
-    //Need to convert 8-bit pixels into 32-bit ARGB colour format
-    //0x00FFFFFF = white, so multiply CHIP-8 pixel value (0 or 1) by this, then set opacity to max
-    for (int i = 0; i < (SCREEN_WIDTH * SCREEN_HEIGHT); i++) {
-        uint8_t screenPixel = state -> screen[i];
-        framebuffer[i] = (0x00FFFFFF * screenPixel) | 0xFF000000;
-    }
-}
-
-SDL_Texture* loadTexture(uint32_t *framebuffer) {
+SDL_Texture* loadTexture() {
     gTexture = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     if (gTexture == NULL) {
@@ -79,6 +70,15 @@ SDL_Texture* loadTexture(uint32_t *framebuffer) {
     }
     
     return gTexture;
+}
+
+void updatePixels(CHIP8State *state, uint32_t *framebuffer) {
+    //Need to convert 8-bit pixels into 32-bit ARGB colour format
+    //0x00FFFFFF = white, so multiply CHIP-8 pixel value (0 or 1) by this, then set opacity to max
+    for (int i = 0; i < (SCREEN_WIDTH * SCREEN_HEIGHT); i++) {
+        uint8_t screenPixel = state -> screen[i];
+        framebuffer[i] = (0x00FFFFFF * screenPixel) | 0xFF000000;
+    }
 }
 
 void closeSDL() {
@@ -132,6 +132,11 @@ int main(int argc, char **argv) {
 
         //Event handler
         SDL_Event e;
+
+        if(!loadTexture()) {
+            printf("Failed to create a texture, quitting instead.\n");
+            quit = true;
+        }
 
         //While the application is running
         while (!quit) {
@@ -225,7 +230,6 @@ int main(int argc, char **argv) {
                 if (machine -> displayFlag) {
                     //printState(machine);
                     updatePixels(machine, framebuffer);
-                    loadTexture(framebuffer);
 
                     //Pitch = no. of bytes in a row of pixels
                     SDL_RenderClear(gRenderer);

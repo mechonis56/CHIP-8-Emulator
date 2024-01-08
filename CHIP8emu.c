@@ -170,8 +170,8 @@ void unimplementedInstruction(CHIP8State *state) {
 
 void op00E0(CHIP8State *state, uint8_t *code) {
     //CLS
-    //Copies 0 into display (64x32) bytes; 1 bit per pixel, 8 bits in a byte = 256 bytes
-    memset(state -> screen, 0, (64 * 32) / 8);
+    //Copies 0 into display (64x32) bytes; originally 1 bit per pixel but the emulated screen is 8-bit 
+    memset(state -> screen, 0, 64 * 32);
     state -> displayFlag = 1;   
 }
 
