@@ -418,7 +418,7 @@ void opEX9E(CHIP8State *state, uint8_t *code) {
     //SKIPKEY_Y
     uint8_t reg = code[0] & 0xf;
     uint8_t ks = state -> V[reg];
-    if (state -> keyState[ks] != 0) {
+    if (state -> keyState[ks]) {
         state -> pc += 2;
     }
 }
@@ -427,7 +427,7 @@ void opEXA1(CHIP8State *state, uint8_t *code) {
     //SKIPKEY_N
     uint8_t reg = code[0] & 0xf;
     uint8_t ks = state -> V[reg];
-    if (state -> keyState[ks] == 0) {
+    if (!state -> keyState[ks]) {
         state -> pc += 2;
     }
 }
@@ -442,25 +442,19 @@ void opFX0A(CHIP8State *state, uint8_t *code) {
     //KEY
     uint8_t reg = code[0] & 0xf;
 
-    if (state -> keyWait == 0) {
-        //1 flag each for the 16 keys
-        memcpy(&(state -> keyState), &(state -> savedKeyState), 16);    
-        state -> keyWait = 1;
-
-        //don't proceed and wait by "resetting" the program counter
-        state -> pc -= 2;                                               
-    }
-    else {
-        //Go through flags and see if any key states have changed, return 
-        for (int i = 0; i < 16; i++) {
-            if ((state -> savedKeyState[i] == 0) && (state -> keyState[i] == 1)) {
-                state -> keyWait = 0;
-                state -> V[reg] = i;
-            }
-
-            //Copy key state to detect if a key was pressed, released and then pressed again
-            state -> savedKeyState[i] = state -> keyState[i];
+    for (int i = 0; i < 16; i++) {
+        if (state -> keyState[i]) {
+            state -> keyWait = 0;
+            state -> V[reg] = i;
         }
+        else {
+            state -> keyWait = 1;
+        }
+    }
+
+    //Don't proceed unless a key is pressed 
+    if (state -> keyWait) {
+        state -> pc -= 2;
     }
 }
 
@@ -480,6 +474,14 @@ void opFX1E(CHIP8State *state, uint8_t *code) {
     //ADI
     uint8_t reg = code[0] & 0xf;
     state -> I += state -> V[reg];
+
+    //Most interpreters check for an overflow
+    if (state -> I > 0xFFF) {
+        state -> V[0xF] = 1;
+    }
+    else {
+        state -> V[0xF] = 0;
+    }
 }
 
 void opFX29(CHIP8State *state, uint8_t *code) {

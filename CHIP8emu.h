@@ -12,7 +12,6 @@ typedef struct CHIP8State {
     uint8_t halt;
     uint8_t keyState[16];
     uint8_t keyWait;
-    uint8_t savedKeyState[16];
     uint8_t displayFlag;
 } CHIP8State;
 

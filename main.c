@@ -210,13 +210,15 @@ int main(int argc, char **argv) {
             if (timer > 1000 / SCREEN_FPS) {
                 timer = 0.0;
 
-                if (machine -> delay > 0) {
-                    machine -> delay -= 1;
-                }
+                if (!machine -> halt) {
+                    if (machine -> delay > 0) {
+                        machine -> delay -= 1;
+                    }
 
-                if (machine -> sound > 0) {
-                    machine -> sound -= 1;
-                }  
+                    if (machine -> sound > 0) {
+                        machine -> sound -= 1;
+                    } 
+                }
 
                 //Update pixel array and load it into the texture, but only if the display flag is on
                 //Only update the pixel array if display flag is set to 1
@@ -229,10 +231,10 @@ int main(int argc, char **argv) {
                     SDL_RenderClear(gRenderer);
                     SDL_UpdateTexture(gTexture, NULL, framebuffer, SCREEN_WIDTH * sizeof(uint32_t));
                     SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
-                    SDL_RenderPresent(gRenderer);
+                    SDL_RenderPresent(gRenderer); 
                     machine -> displayFlag = 0;
                 }
-            } 
+            }
         }
     }
 
