@@ -228,7 +228,6 @@ int main(int argc, char **argv) {
                 }
 
                 //Update pixel array and load it into the texture, but only if the display flag is on
-                //Only update the pixel array if display flag is set to 1
                 if (machine -> displayFlag) {
                     //printState(machine);
                     updatePixels(machine, framebuffer);
@@ -240,6 +239,10 @@ int main(int argc, char **argv) {
                     SDL_RenderPresent(gRenderer); 
                     machine -> displayFlag = 0;
                 } 
+            }
+            //Sleep for the rest of the frame to reduce CPU usage
+            else {
+                SDL_Delay((1000 / SCREEN_FPS) - timer);
             }
         }
     }
