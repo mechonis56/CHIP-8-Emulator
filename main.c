@@ -152,48 +152,50 @@ int main(int argc, char **argv) {
                 //Modern CHIP-8 emulators typically use 1234, QWER, ASDF, ZXCV to replace original keypad
                 if (e.type == SDL_KEYDOWN) {
                     switch (e.key.keysym.sym) {
-                        case SDLK_1: keyDown(machine, 1);
-                        case SDLK_2: keyDown(machine, 2);
-                        case SDLK_3: keyDown(machine, 3);
-                        case SDLK_4: keyDown(machine, 0xc);
+                        case SDLK_1: keyDown(machine, 1); printState(machine); break;
+                        case SDLK_2: keyDown(machine, 2); printState(machine); break;
+                        case SDLK_3: keyDown(machine, 3); printState(machine); break;
+                        case SDLK_4: keyDown(machine, 0xc); printState(machine); break;
 
-                        case SDLK_q: keyDown(machine, 4);
-                        case SDLK_w: keyDown(machine, 5);
-                        case SDLK_e: keyDown(machine, 6);
-                        case SDLK_r: keyDown(machine, 0xd);
+                        case SDLK_q: keyDown(machine, 4); break;
+                        case SDLK_w: keyDown(machine, 5); break;
+                        case SDLK_e: keyDown(machine, 6); break;
+                        case SDLK_r: keyDown(machine, 0xd); break;
                         
-                        case SDLK_a: keyDown(machine, 7);
-                        case SDLK_s: keyDown(machine, 8);
-                        case SDLK_d: keyDown(machine, 9);
-                        case SDLK_f: keyDown(machine, 0xe);
+                        case SDLK_a: keyDown(machine, 7); break;
+                        case SDLK_s: keyDown(machine, 8); break;
+                        case SDLK_d: keyDown(machine, 9); break;
+                        case SDLK_f: keyDown(machine, 0xe); break;
 
-                        case SDLK_z: keyDown(machine, 0xa);
-                        case SDLK_x: keyDown(machine, 0);
-                        case SDLK_c: keyDown(machine, 0xb);
-                        case SDLK_v: keyDown(machine, 0xf);
+                        case SDLK_z: keyDown(machine, 0xa); break;
+                        case SDLK_x: keyDown(machine, 0); break;
+                        case SDLK_c: keyDown(machine, 0xb); break;
+                        case SDLK_v: keyDown(machine, 0xf); break;
+                        default: break;
                     }
                 }
                 else if (e.type == SDL_KEYUP) {
                     switch (e.key.keysym.sym) {
-                        case SDLK_1: keyUp(machine, 1);
-                        case SDLK_2: keyUp(machine, 2);
-                        case SDLK_3: keyUp(machine, 3);
-                        case SDLK_4: keyUp(machine, 0xc);
+                        case SDLK_1: keyUp(machine, 1); break;
+                        case SDLK_2: keyUp(machine, 2); break;
+                        case SDLK_3: keyUp(machine, 3); break;
+                        case SDLK_4: keyUp(machine, 0xc); break;
 
-                        case SDLK_q: keyUp(machine, 4);
-                        case SDLK_w: keyUp(machine, 5);
-                        case SDLK_e: keyUp(machine, 6);
-                        case SDLK_r: keyUp(machine, 0xd);
+                        case SDLK_q: keyUp(machine, 4); break;
+                        case SDLK_w: keyUp(machine, 5); break;
+                        case SDLK_e: keyUp(machine, 6); break;
+                        case SDLK_r: keyUp(machine, 0xd); break;
                         
-                        case SDLK_a: keyUp(machine, 7);
-                        case SDLK_s: keyUp(machine, 8);
-                        case SDLK_d: keyUp(machine, 9);
-                        case SDLK_f: keyUp(machine, 0xe);
+                        case SDLK_a: keyUp(machine, 7); break;
+                        case SDLK_s: keyUp(machine, 8); break;
+                        case SDLK_d: keyUp(machine, 9); break;
+                        case SDLK_f: keyUp(machine, 0xe); break;
 
-                        case SDLK_z: keyUp(machine, 0xa);
-                        case SDLK_x: keyUp(machine, 0);
-                        case SDLK_c: keyUp(machine, 0xb);
-                        case SDLK_v: keyUp(machine, 0xf);
+                        case SDLK_z: keyUp(machine, 0xa); break;
+                        case SDLK_x: keyUp(machine, 0); break;
+                        case SDLK_c: keyUp(machine, 0xb); break;
+                        case SDLK_v: keyUp(machine, 0xf); break;
+                        default: break;
                     }
                 }
             }
@@ -237,13 +239,14 @@ int main(int argc, char **argv) {
                     SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
                     SDL_RenderPresent(gRenderer); 
                     machine -> displayFlag = 0;
-                }
+                } 
             }
         }
     }
 
     //printState(machine);
     //Free resources and close SDL
+    free(framebuffer);
     freeCHIP8(machine);
     closeSDL();
 

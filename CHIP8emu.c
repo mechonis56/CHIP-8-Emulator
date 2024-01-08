@@ -356,7 +356,7 @@ void opANNN(CHIP8State *state, uint8_t *code) {
 }
 
 void opBNNN(CHIP8State *state, uint8_t *code) {
-    //JUMP +V0
+    //JUMP +V0    
     uint16_t target = ((code[0] & 0xf) << 8) | code[1];
     target += state -> V[0];
     
@@ -442,13 +442,12 @@ void opFX0A(CHIP8State *state, uint8_t *code) {
     //KEY
     uint8_t reg = code[0] & 0xf;
 
-    for (int i = 0; i < 16; i++) {
-        if (state -> keyState[i]) {
-            state -> keyWait = 0;
-            state -> V[reg] = i;
-        }
-        else {
-            state -> keyWait = 1;
+    if (!state -> keyWait) {
+        for (int i = 0; i < 16; i++) {
+            if (state -> keyState[i]) {
+                state -> keyWait = 0;
+                state -> V[reg] = i;
+            }
         }
     }
 

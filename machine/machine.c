@@ -112,4 +112,8 @@ void printState(CHIP8State *state) {
     else {
         printf("SOUND = OFF\n");
     }
+    //Print stack pointer, program counter and memory
+    printf("STACK POINTER = %04x\n", state -> sp);
+    printf("PROGRAM COUNTER = %04x\n", state -> pc);
+    printf("MEMORY REGISTER = %04x\n", state -> I);
 }
