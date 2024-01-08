@@ -507,7 +507,7 @@ void opFX55(CHIP8State *state, uint8_t *code) {
     //MOVM STORE I
     uint8_t reg = code[0] & 0xf;
 
-    for (int i = 0; i < reg; i++) {
+    for (int i = 0; i <= reg; i++) {
         state -> memory[(state -> I) + i] = state -> V[i];
     }
 
@@ -520,7 +520,7 @@ void opFX65(CHIP8State *state, uint8_t *code) {
     //MOVM FILL V0-VF
     uint8_t reg = code[0] & 0xf;
 
-    for (int i = 0; i < reg; i++) {
+    for (int i = 0; i <= reg; i++) {
         state -> V[i] = state -> memory[(state -> I) + i];
     }
 
