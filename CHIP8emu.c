@@ -254,6 +254,9 @@ void op8XY1(CHIP8State *state, uint8_t *code) {
     uint8_t regX = code[0] & 0xf;
     uint8_t regY = (code[1] & 0xf0) >> 4;
     state -> V[regX] |= state -> V[regY];
+
+    //On the original CHIP-8, the flag register is reset, so this is purely to pass the quirks test
+    state -> V[0xF] = 0;
 }
 
 void op8XY2(CHIP8State *state, uint8_t *code) {
@@ -261,6 +264,8 @@ void op8XY2(CHIP8State *state, uint8_t *code) {
     uint8_t regX = code[0] & 0xf;
     uint8_t regY = (code[1] & 0xf0) >> 4;
     state -> V[regX] &= state -> V[regY];
+
+    state -> V[0xF] = 0;
 }
 
 void op8XY3(CHIP8State *state, uint8_t *code) {
@@ -268,6 +273,8 @@ void op8XY3(CHIP8State *state, uint8_t *code) {
     uint8_t regX = code[0] & 0xf;
     uint8_t regY = (code[1] & 0xf0) >> 4;
     state -> V[regX] ^= state -> V[regY];
+
+    state -> V[0xF] = 0;
 }
 
 void op8XY4(CHIP8State *state, uint8_t *code) {
@@ -403,13 +410,9 @@ void opDXYN(CHIP8State *state, uint8_t *code) {
                 if (*screenPixel) {
                     state -> V[0xF] = 1;
                 } 
-                *screenPixel ^= 0xff;  
+                *screenPixel ^= 0xF;  
             }
-
-            //x++;
         }
-
-        //y++;
     }
     state -> displayFlag = 1;
 }
