@@ -443,15 +443,21 @@ void opFX0A(CHIP8State *state, uint8_t *code) {
     uint8_t reg = code[0] & 0xf;
 
     if (!state -> keyWait) {
+        memcpy(&(state -> savedKeyState), &(state -> keyState), 16);
+        state -> keyWait = 1;
+    }
+    else {
+        //Check that a key was pressed before AND now released
         for (int i = 0; i < 16; i++) {
-            if (state -> keyState[i]) {
-                state -> keyWait = 0;
+            if (state -> savedKeyState[i] && !(state -> keyState[i])) {
                 state -> V[reg] = i;
+                state -> keyWait = 0;
             }
+            state -> savedKeyState[i] = state -> keyState[i];
         }
     }
-
-    //Don't proceed unless a key is pressed 
+    
+    //Don't proceed unless a key has been pressed and released
     if (state -> keyWait) {
         state -> pc -= 2;
     }
