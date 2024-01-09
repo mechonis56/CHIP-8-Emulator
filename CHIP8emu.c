@@ -222,8 +222,9 @@ void op4XNN(CHIP8State *state, uint8_t *code) {
 
 void op5XY0(CHIP8State *state, uint8_t *code) {
     //SKIP_EQ VY
+    //0xf0 = 0b11110000
     uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf) >> 4;
+    uint8_t regY = (code[1] & 0xf0) >> 4;
 
     if (state -> V[regX] == state -> V[regY]) {
         state -> pc +=2;
@@ -314,7 +315,11 @@ void op8XY5(CHIP8State *state, uint8_t *code) {
 
 void op8XY6(CHIP8State *state, uint8_t *code) {
     //SHR and set VF to least significant bit
+    //Original CHIP-8 interpreter sets VX to VY, modern ones shift VX in place, so this is purely to pass quirk test
     uint8_t regX = code[0] & 0xf;
+    uint8_t regY = (code[1] & 0xf0) >> 4;
+    state -> V[regX] = state -> V[regY];
+
     uint8_t lsb = (state -> V[regX]) & 0x1;
 
     state -> V[regX] = (state -> V[regX]) >> 1;
@@ -340,6 +345,8 @@ void op8XY7(CHIP8State *state, uint8_t *code) {
 void op8XYE(CHIP8State *state, uint8_t *code) {
     //SHL and set VF to most significant bit
     uint8_t regX = code[0] & 0xf;
+    uint8_t regY = (code[1] & 0xf0) >> 4;
+    state -> V[regX] = state -> V[regY];
 
     //0x80 = 0b10000000
     uint8_t msb = (0x80 == ((state -> V[regX]) & 0x80));
