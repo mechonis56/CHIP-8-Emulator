@@ -4,8 +4,6 @@
 
 int openROM(CHIP8State *state, char *filename);
 
-double timeInMicroseconds();
-
 void keyDown(CHIP8State *state, uint8_t key);
 void keyUp(CHIP8State *state, uint8_t key);
 

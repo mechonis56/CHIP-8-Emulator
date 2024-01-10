@@ -40,12 +40,6 @@ int openROM(CHIP8State *state, char *filename) {
     return 0;
 }
 
-double timeInMicroseconds() {
-    clock_t time = clock();
-    double microtime = (double) (time * 1000000) / CLOCKS_PER_SEC;
-    return microtime;
-}
-
 void keyDown(CHIP8State *state, uint8_t key) {
     switch (key) {
         case 0: state -> keyState[0] = 1; break;

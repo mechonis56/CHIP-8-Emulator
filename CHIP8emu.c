@@ -243,45 +243,35 @@ void op7XNN(CHIP8State *state, uint8_t *code) {
     state -> V[reg] += code[1];
 }
 
-void op8XY0(CHIP8State *state, uint8_t *code) {
+void op8XY0(CHIP8State *state, uint8_t regX, uint8_t regY) {
     //MOV
-    uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf0) >> 4;
     state -> V[regX] = state -> V[regY];
 }
 
-void op8XY1(CHIP8State *state, uint8_t *code) {
+void op8XY1(CHIP8State *state, uint8_t regX, uint8_t regY) {
     //OR
-    uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf0) >> 4;
     state -> V[regX] |= state -> V[regY];
 
     //On the original CHIP-8, the flag register is reset, so this is purely to pass the quirks test
     state -> V[0xF] = 0;
 }
 
-void op8XY2(CHIP8State *state, uint8_t *code) {
+void op8XY2(CHIP8State *state, uint8_t regX, uint8_t regY) {
     //AND
-    uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf0) >> 4;
     state -> V[regX] &= state -> V[regY];
 
     state -> V[0xF] = 0;
 }
 
-void op8XY3(CHIP8State *state, uint8_t *code) {
+void op8XY3(CHIP8State *state, uint8_t regX, uint8_t regY) {
     //XOR
-    uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf0) >> 4;
     state -> V[regX] ^= state -> V[regY];
 
     state -> V[0xF] = 0;
 }
 
-void op8XY4(CHIP8State *state, uint8_t *code) {
+void op8XY4(CHIP8State *state, uint8_t regX, uint8_t regY) {
     //ADD and set VF
-    uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf0) >> 4;
     uint16_t result = (state -> V[regX]) + (state -> V[regY]);
 
     //Registers are 8-bit, not 16-bit so we need to bitmask with 0xff = 0b11111111
@@ -297,11 +287,8 @@ void op8XY4(CHIP8State *state, uint8_t *code) {
     }
 }
 
-void op8XY5(CHIP8State *state, uint8_t *code) {
+void op8XY5(CHIP8State *state, uint8_t regX, uint8_t regY) {
     //SUB and set VF
-    uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf0) >> 4;
-
     //Has borrow occured?
     uint8_t borrow = (state -> V[regY]) > (state -> V[regX]);
     state -> V[regX] -= state -> V[regY];
@@ -313,11 +300,9 @@ void op8XY5(CHIP8State *state, uint8_t *code) {
     }
 }
 
-void op8XY6(CHIP8State *state, uint8_t *code) {
+void op8XY6(CHIP8State *state, uint8_t regX, uint8_t regY) {
     //SHR and set VF to least significant bit
     //Original CHIP-8 interpreter sets VX to VY, modern ones shift VX in place, so this is purely to pass quirk test
-    uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf0) >> 4;
     state -> V[regX] = state -> V[regY];
 
     uint8_t lsb = (state -> V[regX]) & 0x1;
@@ -326,11 +311,8 @@ void op8XY6(CHIP8State *state, uint8_t *code) {
     state -> V[0xF] = lsb;
 }
 
-void op8XY7(CHIP8State *state, uint8_t *code) {
+void op8XY7(CHIP8State *state, uint8_t regX, uint8_t regY) {
     //SUBB and set VF
-    uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf0) >> 4;
-
     //Has borrow occured?
     uint8_t borrow = (state -> V[regX]) > (state -> V[regY]);
     state -> V[regX] = (state -> V[regY]) - (state -> V[regX]);
@@ -342,10 +324,8 @@ void op8XY7(CHIP8State *state, uint8_t *code) {
     }
 }
 
-void op8XYE(CHIP8State *state, uint8_t *code) {
+void op8XYE(CHIP8State *state, uint8_t regX, uint8_t regY) {
     //SHL and set VF to most significant bit
-    uint8_t regX = code[0] & 0xf;
-    uint8_t regY = (code[1] & 0xf0) >> 4;
     state -> V[regX] = state -> V[regY];
 
     //0x80 = 0b10000000
@@ -442,16 +422,13 @@ void opEXA1(CHIP8State *state, uint8_t *code) {
     }
 }
 
-void opFX07(CHIP8State *state, uint8_t *code) {
+void opFX07(CHIP8State *state, uint8_t reg) {
     //MOV VX DELAY
-    uint8_t reg = code[0] & 0xf;
     state -> V[reg] = state -> delay;
 }
 
-void opFX0A(CHIP8State *state, uint8_t *code) {
+void opFX0A(CHIP8State *state, uint8_t reg) {
     //KEY
-    uint8_t reg = code[0] & 0xf;
-
     if (!state -> keyWait) {
         memcpy(&(state -> savedKeyState), &(state -> keyState), 16);
         state -> keyWait = 1;
@@ -473,21 +450,18 @@ void opFX0A(CHIP8State *state, uint8_t *code) {
     }
 }
 
-void opFX15(CHIP8State *state, uint8_t *code) {
+void opFX15(CHIP8State *state, uint8_t reg) {
     //MOV DELAY VX
-    uint8_t reg = code[0] & 0xf;
     state -> delay = state -> V[reg];
 }
 
-void opFX18(CHIP8State *state, uint8_t *code) {
+void opFX18(CHIP8State *state, uint8_t reg) {
     //MOV SOUND
-    uint8_t reg = code[0] & 0xf;
     state -> sound = state -> V[reg];
 }
 
-void opFX1E(CHIP8State *state, uint8_t *code) {
+void opFX1E(CHIP8State *state, uint8_t reg) {
     //ADI
-    uint8_t reg = code[0] & 0xf;
     state -> I += state -> V[reg];
 
     //Most interpreters check for an overflow
@@ -499,16 +473,14 @@ void opFX1E(CHIP8State *state, uint8_t *code) {
     }
 }
 
-void opFX29(CHIP8State *state, uint8_t *code) {
+void opFX29(CHIP8State *state, uint8_t reg) {
     //SPRITECHAR
-    uint8_t reg = code[0] & 0xf;
     state -> I = FONT_BASE + ((state -> V[reg]) * 5);
 }
 
-void opFX33(CHIP8State *state, uint8_t *code) {
+void opFX33(CHIP8State *state, uint8_t reg) {
     //MOVBCD
     //Convert value of VX to 3 decimal digits and store these in memory at addresses I, I + 1, I + 2
-    uint8_t reg = code[0] & 0xf;
     uint8_t regValue = state -> V[reg];
 
     uint8_t oneDigit = regValue % 10;
@@ -520,10 +492,8 @@ void opFX33(CHIP8State *state, uint8_t *code) {
     state -> memory[(state -> I) + 2] = oneDigit;
 }
 
-void opFX55(CHIP8State *state, uint8_t *code) {
+void opFX55(CHIP8State *state, uint8_t reg) {
     //MOVM STORE I
-    uint8_t reg = code[0] & 0xf;
-
     for (int i = 0; i <= reg; i++) {
         state -> memory[(state -> I) + i] = state -> V[i];
     }
@@ -533,10 +503,8 @@ void opFX55(CHIP8State *state, uint8_t *code) {
     state -> I += reg + 1;
 }
 
-void opFX65(CHIP8State *state, uint8_t *code) {
+void opFX65(CHIP8State *state, uint8_t reg) {
     //MOVM FILL V0-VF
-    uint8_t reg = code[0] & 0xf;
-
     for (int i = 0; i <= reg; i++) {
         state -> V[i] = state -> memory[(state -> I) + i];
     }
@@ -568,16 +536,18 @@ void emulateCHIP8(CHIP8State *state) {
         case 0x07: op7XNN(state, code); break;
         case 0x08:
             uint8_t fourthNibble = code[1] & 0xf;
+            uint8_t regX = code[0] & 0xf;
+            uint8_t regY = (code[1] & 0xf0) >> 4;
             switch (fourthNibble) {
-                case 0: op8XY0(state, code); break;
-                case 1: op8XY1(state, code); break;
-                case 2: op8XY2(state, code); break;
-                case 3: op8XY3(state, code); break;
-                case 4: op8XY4(state, code); break;
-                case 5: op8XY5(state, code); break;
-                case 6: op8XY6(state, code); break;
-                case 7: op8XY7(state, code); break;
-                case 0xe: op8XYE(state, code); break;
+                case 0: op8XY0(state, regX, regY); break;
+                case 1: op8XY1(state, regX, regY); break;
+                case 2: op8XY2(state, regX, regY); break;
+                case 3: op8XY3(state, regX, regY); break;
+                case 4: op8XY4(state, regX, regY); break;
+                case 5: op8XY5(state, regX, regY); break;
+                case 6: op8XY6(state, regX, regY); break;
+                case 7: op8XY7(state, regX, regY); break;
+                case 0xe: op8XYE(state, regX, regY); break;
                 default: unimplementedInstruction(state); break;
             }
             break;
@@ -595,16 +565,17 @@ void emulateCHIP8(CHIP8State *state) {
             }
             break; 
         case 0x0f:
+            uint8_t reg = code[0] & 0xf;
             switch (code[1]) {
-                case 0x07: opFX07(state, code); break;
-                case 0x0a: opFX0A(state, code); break;
-                case 0x15: opFX15(state, code); break;
-                case 0x18: opFX18(state, code); break;
-                case 0x1e: opFX1E(state, code); break;
-                case 0x29: opFX29(state, code); break;
-                case 0x33: opFX33(state, code); break;
-                case 0x55: opFX55(state, code); break;
-                case 0x65: opFX65(state, code); break;
+                case 0x07: opFX07(state, reg); break;
+                case 0x0a: opFX0A(state, reg); break;
+                case 0x15: opFX15(state, reg); break;
+                case 0x18: opFX18(state, reg); break;
+                case 0x1e: opFX1E(state, reg); break;
+                case 0x29: opFX29(state, reg); break;
+                case 0x33: opFX33(state, reg); break;
+                case 0x55: opFX55(state, reg); break;
+                case 0x65: opFX65(state, reg); break;
             }
             break;
     }

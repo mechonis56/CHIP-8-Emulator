@@ -58,7 +58,6 @@ bool initSDL() {
         }
     }
 
-    //printf("SDL successfully initialised.\n");
     return success;
 }
 
@@ -105,7 +104,6 @@ int main(int argc, char **argv) {
     //Start the CHIP-8 interpreter machine and load the program
     CHIP8State *machine = initCHIP8();
     char *filename = argv[1];
-    //printf("Loading program %s...\n", filename);
     if (openROM(machine, filename) != 0) {
         return 1;
     }
@@ -152,10 +150,10 @@ int main(int argc, char **argv) {
                 //Modern CHIP-8 emulators typically use 1234, QWER, ASDF, ZXCV to replace original keypad
                 if (e.type == SDL_KEYDOWN) {
                     switch (e.key.keysym.sym) {
-                        case SDLK_1: keyDown(machine, 1); printState(machine); break;
-                        case SDLK_2: keyDown(machine, 2); printState(machine); break;
-                        case SDLK_3: keyDown(machine, 3); printState(machine); break;
-                        case SDLK_4: keyDown(machine, 0xc); printState(machine); break;
+                        case SDLK_1: keyDown(machine, 1); break;
+                        case SDLK_2: keyDown(machine, 2); break;
+                        case SDLK_3: keyDown(machine, 3); break;
+                        case SDLK_4: keyDown(machine, 0xc); break;
 
                         case SDLK_q: keyDown(machine, 4); break;
                         case SDLK_w: keyDown(machine, 5); break;
@@ -231,7 +229,6 @@ int main(int argc, char **argv) {
 
                 //Update pixel array and load it into the texture, but only if the display flag is on
                 if (machine -> displayFlag) {
-                    //printState(machine);
                     updatePixels(machine, framebuffer);
 
                     //Pitch = no. of bytes in a row of pixels
@@ -249,7 +246,6 @@ int main(int argc, char **argv) {
         }
     }
 
-    //printState(machine);
     //Free resources and close SDL
     free(framebuffer);
     freeCHIP8(machine);
