@@ -171,6 +171,8 @@ int main(int argc, char **argv) {
                         case SDLK_x: keyDown(machine, 0); break;
                         case SDLK_c: keyDown(machine, 0xb); break;
                         case SDLK_v: keyDown(machine, 0xf); break;
+                        case SDLK_ESCAPE: machine -> halt = 1; quit = true; break;
+
                         default: break;
                     }
                 }
