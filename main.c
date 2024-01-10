@@ -1,99 +1,5 @@
 #include <stdio.h>
-#include <stdbool.h>
-#include <SDL2/SDL.h>
-#include "machine/machine.h"
-
-//Window, CHIP-8 dimensions and frequency constants
-const int SCREEN_WIDTH = 64;
-const int SCREEN_HEIGHT = 32;
-const int WINDOW_WIDTH = 1280;
-const int WINDOW_HEIGHT = 640;
-const int SCREEN_FPS = 60;
-const int INSTRUCTION_FREQUENCY = 700;
-
-//Start up SDL and create a window
-bool initSDL();
-
-//The renderer and the window to render to
-SDL_Window *gWindow = NULL;
-SDL_Renderer *gRenderer = NULL;
-
-//Load pixel array as a texture to be displayed
-SDL_Texture* loadTexture();
-void updatePixels(CHIP8State *state, uint32_t *framebuffer);
-SDL_Texture *gTexture = NULL;
-
-//Free resources and shut down SDL
-void closeSDL();
-
-bool initSDL() {
-    //Initialisation flag
-    bool success = true;
-
-    //Initialise SDL
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        printf("SDL could not be initialised. SDL Error: %s\n", SDL_GetError());
-        success = false;
-    }
-    else {
-        //Create a window
-        gWindow = SDL_CreateWindow("CHIP-8 Emulator", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
-
-        if (gWindow == NULL) {
-            printf("Window could not be created. SDL Error: %s\n", SDL_GetError());
-            success = false;
-        }
-        else {
-            //Create renderer for the window
-            gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
-            if (gRenderer == NULL) {
-                printf("Renderer could not be created. SDL Error: %s\n", SDL_GetError());
-                success = false;
-            }
-            else {
-                //Upscale resolution and use nearest pixel sampling to prevent blurring of pixels
-                SDL_RenderSetLogicalSize(gRenderer, SCREEN_WIDTH, SCREEN_HEIGHT);
-                SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
-            }
-        }
-    }
-
-    return success;
-}
-
-SDL_Texture* loadTexture() {
-    gTexture = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
-
-    if (gTexture == NULL) {
-        printf("Texture could not be created. SDL Error: %s\n", SDL_GetError());
-    }
-    
-    return gTexture;
-}
-
-void updatePixels(CHIP8State *state, uint32_t *framebuffer) {
-    //Need to convert 8-bit pixels into 32-bit ARGB colour format
-    //0x00FFFFFF = white, so multiply CHIP-8 pixel value (0 or 1) by this, then set opacity to max
-    for (int i = 0; i < (SCREEN_WIDTH * SCREEN_HEIGHT); i++) {
-        uint8_t screenPixel = state -> screen[i];
-        framebuffer[i] = (0x00FFFFFF * screenPixel) | 0xFF000000;
-    }
-}
-
-void closeSDL() {
-    //Deallocate loaded image
-    SDL_DestroyTexture(gTexture);
-    gTexture = NULL;
-
-    //Destroy window
-    SDL_DestroyRenderer(gRenderer);
-    SDL_DestroyWindow(gWindow);
-    gRenderer = NULL;
-    gWindow = NULL;
-
-    //Quit SDL subsystems
-    SDL_Quit();
-}
+#include "display/display.h"
 
 int main(int argc, char **argv) {
     if (argc < 2) {
@@ -115,13 +21,10 @@ int main(int argc, char **argv) {
     double delta = 0.0;
     double timer = 0.0;
 
-    //Create a 32-bit pixel array from CHIP-8 screen to load into the texture
-    //SDL_PIXELFORMAT_RGBA8888, the easiest format to understand, is 32-bit
-    //Tried SDL_PIXELFORMAT_INDEX8 first but couldn't understand how to get it to work
-    uint32_t *framebuffer = calloc(SCREEN_WIDTH * SCREEN_HEIGHT, sizeof(uint32_t));
-
     //Start up SDL and create a window
-    if (!initSDL()) {
+    Display *display = initDisplay();
+
+    if (!initSDL(display)) {
         printf("Failed to initialise.\n");
     }
     else {
@@ -130,11 +33,6 @@ int main(int argc, char **argv) {
 
         //Event handler
         SDL_Event e;
-
-        if(!loadTexture()) {
-            printf("Failed to create a texture, quitting instead.\n");
-            quit = true;
-        }
 
         //While the application is running
         while (!quit) {
@@ -229,15 +127,8 @@ int main(int argc, char **argv) {
 
                 //Update pixel array and load it into the texture, but only if the display flag is on
                 if (machine -> displayFlag) {
-                    updatePixels(machine, framebuffer);
-
-                    //Pitch = no. of bytes in a row of pixels
-                    SDL_RenderClear(gRenderer);
-                    SDL_UpdateTexture(gTexture, NULL, framebuffer, SCREEN_WIDTH * sizeof(uint32_t));
-                    SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
-                    SDL_RenderPresent(gRenderer); 
-                    machine -> displayFlag = 0;
-                } 
+                    updateDisplay(machine, display);
+                }
             }
             //Sleep for the rest of the frame to reduce CPU usage
             else {
@@ -247,9 +138,8 @@ int main(int argc, char **argv) {
     }
 
     //Free resources and close SDL
-    free(framebuffer);
     freeCHIP8(machine);
-    closeSDL();
+    closeDisplay(display);
 
     return 0;
 }

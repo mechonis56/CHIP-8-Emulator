@@ -1,5 +1,5 @@
 # Source files
-SOURCES = CHIP8emu.c CHIP8emu.h font4x5.c font4x5.h machine/machine.c machine/machine.h main.c
+SOURCES = CHIP8emu.c CHIP8emu.h font4x5.c font4x5.h machine/machine.c machine/machine.h display/display.c display/display.h main.c
 
 # Output executable
 EXE = emulator
@@ -42,4 +42,5 @@ clean:
 CHIP8emu.o: CHIP8emu.c CHIP8emu.h
 font4x5.o: font4x5.c font4x5.h
 machine.o: machine.c machine.h
+display.o: display.c display.h
 main.o: main.c
