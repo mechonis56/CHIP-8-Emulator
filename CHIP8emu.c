@@ -384,9 +384,17 @@ void opDXYN(CHIP8State *state, uint8_t *code) {
     for (int i = 0; i < rows; i++) {
         uint8_t *sprite = &(state -> memory[(state -> I) + i]);
 
+        if (y + i > 32) {
+            break;
+        }
+
         //For each of the 8 pixels/bits in the row, going from left to right i.e. most to least significant bit
         //0x80 = 0b10000000 i.e. the most significant bit, so below statement will be iterated for each bit
         for (int j = 0; j < 8; j++) {
+            if (x + j >= 64 || x + j < 0) {
+                continue;
+            }
+
             uint8_t spritePixel = *sprite & (0x80 >> j);
 
             //If current 1-bit sprite pixel = on and 8-bit screen pixel at (X,Y) = on, turn off screen pixel and set VF to 1
